@@ -5,7 +5,7 @@ Test fields required for intrinsic value calculation, that is:
 
 import pytest
 from pydantic import ValidationError
-from models.company_facts_object import CommonStockSharesOutstanding
+from models.ingestion import CommonStockSharesOutstanding
 
 
 def test_common_stock_shares_outstanding():

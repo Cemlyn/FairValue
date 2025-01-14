@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 # Replace with your Polygon.io API key
-API_KEY = os.getenv("POLYGON_API_KEY",default=None)
+API_KEY = os.getenv("POLYGON_API_KEY", default=None)
 
 # Base URL for Polygon.io
 BASE_URL = "https://api.polygon.io/v2/aggs/ticker"
@@ -31,15 +31,15 @@ def get_current_price(ticker):
 
 def main(csv_file):
     """Read tickers from a CSV file and fetch their prices."""
-    df = pd.read_csv(csv_file,parse_dates=['latest_date'])
+    df = pd.read_csv(csv_file, parse_dates=["latest_date"])
     df["latest_date"] = df["latest_date"].dt.date
 
     tickers = df["ticker"].values.tolist()
     latest_dates = df["latest_date"].values.tolist()
-    data = zip(tickers,latest_dates)
+    data = zip(tickers, latest_dates)
     counter = 0
-    for ticker,latest_date in tqdm.tqdm(data):
-        counter+=1
+    for ticker, latest_date in tqdm.tqdm(data):
+        counter += 1
         if pd.isnull(ticker) or pd.isnull(latest_date):
             price = {
                 "T": ticker,
@@ -52,7 +52,7 @@ def main(csv_file):
                 "t": None,
                 "n": None,
             }
-        elif (latest_date<=pd.Timestamp('2023-12-01').date()):
+        elif latest_date <= pd.Timestamp("2023-12-01").date():
             price = {
                 "T": ticker,
                 "v": None,
@@ -69,23 +69,23 @@ def main(csv_file):
 
             if price is None:
                 price = {
-                "T": None,
-                "v": None,
-                "vw": None,
-                "o": None,
-                "c": None,
-                "h": None,
-                "l": None,
-                "t": None,
-                "n": None,
-            }
+                    "T": None,
+                    "v": None,
+                    "vw": None,
+                    "o": None,
+                    "c": None,
+                    "h": None,
+                    "l": None,
+                    "t": None,
+                    "n": None,
+                }
 
             time.sleep(0.05)
 
         json_line = json.dumps(price)
 
-        with open('outputs.jsonl','a') as file:
-            file.write(json_line+"\n")
+        with open("outputs.jsonl", "a") as file:
+            file.write(json_line + "\n")
 
 
 if __name__ == "__main__":

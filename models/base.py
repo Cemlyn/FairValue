@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import numpy as np
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class Floats(BaseModel):

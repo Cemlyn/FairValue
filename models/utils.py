@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
-
-import pandas as pd
+from typing import Optional
 
 
 def validate_date(field_name: str, value: Optional[str]) -> str:

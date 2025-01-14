@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ValidationError, Field, field_validator, validator
+from pydantic import BaseModel, Field, field_validator, validator
 from typing import List, Optional, Union
 from models.utils import validate_date
 

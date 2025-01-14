@@ -16,6 +16,22 @@ install: venv # Install dependencies
 process-data: # Process the data
 	$(PYTHON) process_company_facts.py
 
+.PHONY: test
+test: # run unit tests
+	pytest test
+
 .PHONY: fmt
+
+# Check the operating system
+ifeq ($(OS),Windows_NT)
+    # Use cmd.exe to execute the Windows command
+    #FMT_CMD = cmd /C "for /r %%G in (*.py) do black %%G"
+	FMT_CMD = echo "heelo"
+else
+    # Use Unix-like command
+    FMT_CMD = find test models process_company_facts.py -type f -name '*.py' | xargs black
+endif
+
+# Rule to format Python files
 fmt:
-	@find test models process_company_facts.py -type f -name '*.py' | xargs black
+	@$(FMT_CMD)

@@ -143,7 +143,7 @@ def process_directory(dir: str = None, output: str = "company_facts.jsonl"):
             for record in records:
                 json_line = json.dumps(record)
 
-                with open(output_filepath, "a") as file:
+                with open(output_filepath, "a", encoding="utf-8") as file:
                     file.write(json_line + "\n")
         except ValidationError:
             continue
