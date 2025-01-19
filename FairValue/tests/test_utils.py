@@ -1,6 +1,6 @@
 import pytest
 
-from utils import fill_dates, check_for_missing_dates
+from FairValue.utils import fill_dates, check_for_missing_dates
 
 
 def test_valid_sequence():
@@ -26,7 +26,13 @@ def test_invalid_inputs():
 def test_for_leap_years():
 
     # leap year example without missing data
-    dates = ["2009-05-31", "2010-05-31", "2011-05-31", "2012-05-31", "2012-05-31"]
+    dates = [
+        "2009-05-31",
+        "2010-05-31",
+        "2011-05-31",
+        "2012-05-31",
+        "2012-05-31",
+    ]
     missing_dates = check_for_missing_dates(dates)
     assert missing_dates != [2013]
     assert len(missing_dates) == 0

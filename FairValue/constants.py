@@ -1,1 +1,2 @@
 DATE_FORMAT = "%Y-%m-%d"
+MEAN_DAYS_IN_YEAR = 365

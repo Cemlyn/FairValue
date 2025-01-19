@@ -1,6 +1,6 @@
 import pytest
 from pydantic import ValidationError
-from models.ingestion import Shares, Datum
+from FairValue.models.ingestion import Shares, Datum
 
 
 def test_dei_datum_valid():

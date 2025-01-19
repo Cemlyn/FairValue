@@ -6,7 +6,7 @@ Test fields required for intrinsic value calculation, that is:
 
 import pytest
 from pydantic import ValidationError
-from models.ingestion import NetOpsCash, CapEx, USGaap
+from FairValue.models.ingestion import NetOpsCash, CapEx, USGaap
 
 
 def test_net_ops_cash():

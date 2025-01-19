@@ -2,8 +2,10 @@ import json
 import statistics
 from calendar import monthrange
 from datetime import datetime, date, timedelta
-from typing import List
+from typing import List, Tuple
 from dateutil.relativedelta import relativedelta
+
+import pandas as pd
 
 from FairValue.constants import DATE_FORMAT
 
@@ -88,7 +90,8 @@ def generate_future_dates(n: int) -> List[str]:
     today = date.today()
 
     future_dates = [
-        (today + timedelta(days=365 * i)).strftime(DATE_FORMAT) for i in range(n)
+        (today + timedelta(days=365 * i)).strftime(DATE_FORMAT)
+        for i in range(n)
     ]
     return future_dates
 
@@ -105,7 +108,9 @@ def check_for_missing_dates(date_strings: List[str]) -> List[int]:
     # Generate a list of dates spanning from min_date to max_date with yearly intervals
     dts = [min_date]
     while dts[-1] < max_date:
-        dts.append(dts[-1] + relativedelta(years=1))  # Approximation for a year
+        dts.append(
+            dts[-1] + relativedelta(years=1)
+        )  # Approximation for a year
 
     # Extract years from the original dates and the generated date range
     years = {date.year for date in dates}
@@ -160,3 +165,30 @@ class RoundedDict:
         if isinstance(value, float):
             return round(value, 2)
         return value
+
+
+def drop_nans(
+    a: List[float], b: List[float]
+) -> Tuple[List[float], List[float]]:
+    """
+    Removes NaN values from list `b` and their corresponding values in list `a`.
+
+    Args:
+        a (List[float]): The first list of values.
+        b (List[float]): The second list of values, potentially containing NaNs.
+
+    Returns:
+        Tuple[List[float], List[float]]: Two lists with NaNs removed from `b` and corresponding indices from `a`.
+    """
+    if len(a) != len(b):
+        raise ValueError("The lengths of 'a' and 'b' must be equal.")
+
+    filtered_a = []
+    filtered_b = []
+
+    for value_a, value_b in zip(a, b):
+        if not pd.isnull(value_b):
+            filtered_a.append(value_a)
+            filtered_b.append(value_b)
+
+    return filtered_a, filtered_b

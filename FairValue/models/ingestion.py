@@ -32,7 +32,9 @@ class Shares(BaseModel):
     @field_validator("shares", mode="before")
     def validate_currency_data(cls, value):
         if not value or len(value) == 0:
-            raise ValueError("The 'shares' field must contain at least one entry.")
+            raise ValueError(
+                "The 'shares' field must contain at least one entry."
+            )
         return value
 
 
@@ -43,7 +45,9 @@ class USD(BaseModel):
     @field_validator("USD", mode="before")
     def validate_currency_data(cls, value):
         if not value or len(value) == 0:
-            raise ValueError("The 'USD' field must contain at least one entry.")
+            raise ValueError(
+                "The 'USD' field must contain at least one entry."
+            )
         return value
 
 

@@ -59,7 +59,9 @@ def process_company_facts(
     company_facts = CompanyFacts(**json_data)
 
     if company_facts.facts.dei.EntityCommonStockSharesOutstanding:
-        shares = company_facts.facts.dei.EntityCommonStockSharesOutstanding.units.shares
+        shares = (
+            company_facts.facts.dei.EntityCommonStockSharesOutstanding.units.shares
+        )
         shares_df = datum_to_dataframe(shares, "shares_outstanding")
         shares_df = shares_df[~shares_df["frame"].isna()]
 
@@ -68,7 +70,9 @@ def process_company_facts(
     #     shares_df = datum_to_dataframe(shares, "shares_outstanding")
     #     shares_df = shares_df[~shares_df["frame"].isna()]
     else:
-        shares_df = pd.DataFrame(columns=["end", "filed", "form", "shares_outstanding"])
+        shares_df = pd.DataFrame(
+            columns=["end", "filed", "form", "shares_outstanding"]
+        )
 
     if company_facts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities:
         netcashflow = (
@@ -88,10 +92,14 @@ def process_company_facts(
         capex_df = datum_to_dataframe(capex, "capital_expenditure")
         capex_df = capex_df[~capex_df["frame"].isna()]
     else:
-        capex_df = pd.DataFrame(columns=["end", "filed", "form", "capital_expenditure"])
+        capex_df = pd.DataFrame(
+            columns=["end", "filed", "form", "capital_expenditure"]
+        )
 
     # Combine cashflow and capex
-    merged = netcashflow_df[["end", "filed", "form", "net_cashflow_ops"]].merge(
+    merged = netcashflow_df[
+        ["end", "filed", "form", "net_cashflow_ops"]
+    ].merge(
         capex_df[["end", "filed", "form", "capital_expenditure"]],
         on=["end", "filed", "form"],
         how="outer",
@@ -122,7 +130,6 @@ def process_company_facts(
         lambda row: find_latest_shares_outstanding(row, shares_df), axis=1
     )
 
-    # merged = pd.merge_asof(merged,shares_df[["end_ts","shares_outstanding"]],left_on='end_ts',right_on='end_ts',direction='backward')
     merged.drop(columns=["end_ts"], inplace=True)
 
     merged["shares_outstanding"] = merged["shares_outstanding"].ffill().bfill()
@@ -198,7 +205,7 @@ if __name__ == "__main__":
     # print(f"Unable to parse: {unable_to_parse_count} out of {len(files)}")
 
     # creates a csv containing the predictions
-    df = pd.read_json(os.path.join("data","company_facts.jsonl"), lines=True)
+    df = pd.read_json(os.path.join("data", "company_facts.jsonl"), lines=True)
     df["capital_expenditure"] = df["capital_expenditure"].fillna(0)
     df["free_cashflows"] = df["net_cashflow_ops"] - df["capital_expenditure"]
     df["end_parsed"] = pd.to_datetime(df["end"], format=DATE_FORMAT)
@@ -206,15 +213,25 @@ if __name__ == "__main__":
     df["end_year"] = df["end_parsed"].dt.year
 
     # fixing data errors
-    mask = (df.cik == 889900) & (df.end == "2021-12-31") & (df.filed == "2024-02-27")
+    mask = (
+        (df.cik == 889900)
+        & (df.end == "2021-12-31")
+        & (df.filed == "2024-02-27")
+    )
     df.loc[mask, "shares_outstanding"] = -df.loc[mask, "shares_outstanding"]
 
-    mask = (df.cik == 889936) & (df.end == "	2010-12-31") & (df.filed == "2013-02-22")
+    mask = (
+        (df.cik == 889936)
+        & (df.end == "	2010-12-31")
+        & (df.filed == "2013-02-22")
+    )
     df.loc[mask, "shares_outstanding"] = -df.loc[mask, "shares_outstanding"]
 
     df["shares_outstanding"] = df["shares_outstanding"].abs()
 
-    df = df.drop_duplicates(subset=["cik", "end_parsed", "filed_parsed"], keep="last")
+    df = df.drop_duplicates(
+        subset=["cik", "end_parsed", "filed_parsed"], keep="last"
+    )
     df = df.drop_duplicates(subset=["cik", "end_year"], keep="last")
 
     count = 0
@@ -233,6 +250,6 @@ if __name__ == "__main__":
         )
         stocks.append(stock.predict_fairvalue())
 
-    pd.DataFrame(stocks).sort_values(by=["latest_10k"]).to_csv(
-        os.path.join(DIR, "intrinsic_value.csv"), index=False
-    )
+    pd.DataFrame(stocks).sort_values(
+        by=["last_filing_date"], ascending=False
+    ).to_csv(os.path.join(DIR, "intrinsic_value.csv"), index=False)
