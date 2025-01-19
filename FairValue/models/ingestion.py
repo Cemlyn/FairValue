@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field, field_validator, validator
 from typing import List, Optional, Union
-from models.utils import validate_date
+from FairValue.models.utils import validate_date
 
 
 class Datum(BaseModel):
+
     end: str  # Must be a valid date
     val: int
     accn: Optional[str] = None
@@ -25,6 +26,7 @@ class Datum(BaseModel):
 
 
 class Shares(BaseModel):
+
     shares: List[Datum]
 
     @field_validator("shares", mode="before")
@@ -35,6 +37,7 @@ class Shares(BaseModel):
 
 
 class USD(BaseModel):
+
     USD: List[Datum]
 
     @field_validator("USD", mode="before")
@@ -45,49 +48,77 @@ class USD(BaseModel):
 
 
 class CommonStockSharesOutstanding(BaseModel):
+
     label: str
+
     description: str
+
+    units: Shares
+
+
+class sharesOutstanding(BaseModel):
+
+    label: str
+
+    description: str
+
     units: Shares
 
 
 class PublicFloat(BaseModel):
+
     label: str
+
     description: str
+
     units: USD
 
 
 class Dei(BaseModel):
+
     EntityCommonStockSharesOutstanding: CommonStockSharesOutstanding
-    EntityPublicFloat: Optional[PublicFloat]
+
+    EntityPublicFloat: Optional[PublicFloat] = None
 
     model_config = {"extra": "allow"}  # Allows additional fields
 
 
 class NetOpsCash(BaseModel):
+
     label: str
+
     description: str
+
     units: USD
 
 
 class CapEx(BaseModel):
+
     label: str
     description: str
     units: USD
 
 
 class USGaap(BaseModel):
+
     NetCashProvidedByUsedInOperatingActivities: NetOpsCash
+
     PaymentsToAcquirePropertyPlantAndEquipment: Optional[CapEx] = None
 
     model_config = {"extra": "allow"}  # Allows additional fields
 
 
 class Facts(BaseModel):
+
     dei: Dei
+
     us_gaap: USGaap = Field(alias="us-gaap")
 
 
 class CompanyFacts(BaseModel):
+
     cik: Union[str, int]
+
     entityName: str
+
     facts: Facts

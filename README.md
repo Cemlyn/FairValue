@@ -12,3 +12,16 @@ Once these files have been downloaded and unzipped running:
 ```bash
 make process-data
 ```
+
+
+## todo
+- 1. handle multiple 10ks in the same year, e.g. multiple filings due to aquisition or merger.
+- 2. better handling of tickers with no shares outstanding
+- 3. include book value in valuation?
+- 4. MSTR: ValidationError: 1 validation error for CompanyFacts
+    facts.dei.EntityCommonStockSharesOutstanding
+    Field required [type=missing, input_value={'EntityPublicFloat': {'l...frame': 'CY2023Q2I'}]}}}, input_type=dict]
+        For further information visit https://errors.pydantic.dev/2.10/v/missing
+
+## Data Quality Issues
+- {'cik':889936,'end':'2010-12-31','filed':'2013-02-22'}

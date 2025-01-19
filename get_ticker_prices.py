@@ -9,9 +9,11 @@ import pandas as pd
 
 # Replace with your Polygon.io API key
 API_KEY = os.getenv("POLYGON_API_KEY", default=None)
+API_KEY = "HicWT_23n7WSfrv0ywH9_7lfefuix1me"
 
 # Base URL for Polygon.io
 BASE_URL = "https://api.polygon.io/v2/aggs/ticker"
+LATEST_DATE = "latest_10k"
 
 
 def get_current_price(ticker):
@@ -31,11 +33,11 @@ def get_current_price(ticker):
 
 def main(csv_file):
     """Read tickers from a CSV file and fetch their prices."""
-    df = pd.read_csv(csv_file, parse_dates=["latest_date"])
-    df["latest_date"] = df["latest_date"].dt.date
+    df = pd.read_csv(csv_file, parse_dates=[LATEST_DATE])
+    df[LATEST_DATE] = df[LATEST_DATE].dt.date
 
-    tickers = df["ticker"].values.tolist()
-    latest_dates = df["latest_date"].values.tolist()
+    tickers = df["ticker_id"].values.tolist()
+    latest_dates = df[LATEST_DATE].values.tolist()
     data = zip(tickers, latest_dates)
     counter = 0
     for ticker, latest_date in tqdm.tqdm(data):

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class Floats(BaseModel):
+
     data: List[float] = Field(..., description="A list of float values.")
 
     def __getitem__(self, index):
@@ -26,6 +27,7 @@ class Floats(BaseModel):
 
 
 class NonNegFloats(Floats):
+
     @field_validator("data")
     def check_non_negative(cls, values: List[Optional[float]]):
         for value in values:
@@ -37,6 +39,7 @@ class NonNegFloats(Floats):
 
 
 class Ints(BaseModel):
+
     data: List[int] = Field(..., description="A list of int values.")
 
     def __getitem__(self, index):
@@ -58,6 +61,7 @@ class Ints(BaseModel):
 
 
 class NonNegInts(Ints):
+
     @field_validator("data")
     def check_non_negative(cls, values: List[int]):
         if any(value < 0 for value in values):
@@ -66,6 +70,7 @@ class NonNegInts(Ints):
 
 
 class Strs(BaseModel):
+
     data: List[str] = Field(..., description="A list of str values.")
 
     def __getitem__(self, index):
