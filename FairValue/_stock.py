@@ -18,7 +18,7 @@ from FairValue.models.financials import (
     ForecastTickerFinancials,
 )
 from FairValue.models.base import Floats, Strs, NonNegInts
-from FairValue.calculations import daily_trend, detrend_series
+from FairValue._calculations import daily_trend, detrend_series
 
 from FairValue.constants import DATE_FORMAT, MEAN_DAYS_IN_YEAR
 
@@ -72,6 +72,7 @@ class Stock:
         response["cik"] = self.cik
         response["entityName"] = self.entityName
         response["last_filing_date"] = self.financials.year_end_dates[-1]
+        response["number_of_filings"] = len(self.financials.year_end_dates)
         response["forecast_date"] = today.strftime(DATE_FORMAT)
         response["forecast_horizon"] = number_of_years
         response["invalid_flag"] = False
@@ -155,30 +156,28 @@ def calc_historical_features(financials: TickerFinancials = None) -> dict:
 
     features = dict()
 
-    # basic free cashflow features
+    # Free Cashflow trends
     dates, fc_flows = drop_nans(
         financials.year_end_dates, financials.free_cashflows
     )
 
-    features["free_cashflow_trend"], _ = daily_trend(dates, fc_flows)
-    features["free_cashflow_trend"] = (
-        features["free_cashflow_trend"] * MEAN_DAYS_IN_YEAR
-    )
+    # free cashflow features which looks at trends in the financials
+    features["free_cashflow_yoy_amt"] = fc_flows[-1] - fc_flows[-2]
+    features["free_cashflow_yoy_pct"] = fc_flows[-1]/fc_flows[-2] - 1
 
-    features["free_cashflow_std"] = np.std(fc_flows)
-    features["detrended_free_cashflow_std"] = np.std(
-        detrend_series(dates, fc_flows)
-    )
-
-    # basic capital expenditure features
-    dates, capex = drop_nans(
-        financials.year_end_dates, financials.capital_expenditures
-    )
-    features["capex_trend"], _ = daily_trend(dates, capex)
-    features["capex_trend"] = features["capex_trend"] * MEAN_DAYS_IN_YEAR
-
-    features["capex_std"] = np.std(capex)
-    features["detrended_capex_std"] = np.std(detrend_series(dates, capex))
+    # last 3, 5, 10 years
+    for n in [3,5,10]:
+        fc_flows_slice = fc_flows[:n]
+        dates_slice = dates[:n]
+        features["free_cashflow_mean_L{n}yrs"] = np.mean(fc_flows_slice)
+        features["free_cashflow_median_L{n}yrs"] = np.median(fc_flows_slice)
+        features["free_cashflow_std_L{n}yrs"] = np.std(fc_flows_slice)
+        features["free_cashflow_range_L{n}yrs"] = max(fc_flows_slice) - min(fc_flows_slice)
+        features["free_cashflow_trend_L{n}yrs"],_,_,residuals = daily_trend(dates_slice, fc_flows_slice)
+        features["free_cashflow_trend_L{n}yrs"] = features["free_cashflow_trend_L{n}yrs"]*MEAN_DAYS_IN_YEAR
+        features["free_cashflow_trend_residuals_range_L{n}yrs"] = max(residuals) - min(residuals)
+        features["free_cashflow_trend_residuals_std_L{n}yrs"] = np.std(residuals)
+        features["free_cashflow_perc_non_zero_L{n}yrs"] = len([x for x in fc_flows_slice if x>0])/len(fc_flows_slice)
 
     return features
 

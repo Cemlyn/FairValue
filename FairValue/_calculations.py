@@ -8,7 +8,7 @@ from FairValue.constants import DATE_FORMAT
 
 def daily_trend(
     dates: List[str] = None, amounts: List[float] = None
-) -> Tuple[float, float]:
+) -> Tuple[float, float, List[float]]:
     """
     Calculate the gradient (trend) in an amount in days.
 
@@ -43,7 +43,13 @@ def daily_trend(
     # Perform linear regression using numpy's polyfit
     slope, intercept = np.polyfit(date_ordinals, amounts, 1)
 
-    return slope, intercept
+    # Calculate predicted values based on the trend line
+    predicted = [slope * x + intercept for x in date_ordinals]
+
+    # Calculate residuals
+    residuals = [actual - pred for actual, pred in zip(amounts, predicted)]
+
+    return slope, intercept, predicted, residuals
 
 
 def detrend_series(

@@ -1,4 +1,4 @@
-# StocksValuation
+# FairValue
 
 Calculating intrinsic Value of stocks using SEC fillings.
 
@@ -25,3 +25,8 @@ make process-data
 
 ## Data Quality Issues
 - {'cik':889936,'end':'2010-12-31','filed':'2013-02-22'}
+
+
+## Roadmap
+- modelling features:
+    - sharpes ratio
