@@ -8,11 +8,16 @@ testpaths = [
 
 # Configuration for Black, the Python code formatter
 [tool.black]
-line-length = 79
+line-length = 190
 #skip-string-normalization = false  # Don't enforce double quotes
 exclude = '''
 /(
     data
   | .venv
+  | .*\.ipynb$
 )/
 '''
+
+# configuration for pylint
+[tool.pylint.'MESSAGES CONTROL']
+disable = ["missing-module-docstring","missing-function-docstring","missing-class-docstring"]

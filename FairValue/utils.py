@@ -1,13 +1,14 @@
 import json
 import statistics
 from calendar import monthrange
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
+from datetime import date as dte
 from typing import List, Tuple
 from dateutil.relativedelta import relativedelta
 
 import pandas as pd
 
-from FairValue.constants import DATE_FORMAT
+from fairvalue.constants import DATE_FORMAT
 
 
 def series_to_list(series):
@@ -87,12 +88,9 @@ def generate_future_dates(n: int) -> List[str]:
     if n < 0:
         raise ValueError("The number of years (n) must be non-negative.")
 
-    today = date.today()
+    today = dte.today()
 
-    future_dates = [
-        (today + timedelta(days=365 * i)).strftime(DATE_FORMAT)
-        for i in range(n)
-    ]
+    future_dates = [(today + timedelta(days=365 * i)).strftime(DATE_FORMAT) for i in range(n)]
     return future_dates
 
 
@@ -108,9 +106,7 @@ def check_for_missing_dates(date_strings: List[str]) -> List[int]:
     # Generate a list of dates spanning from min_date to max_date with yearly intervals
     dts = [min_date]
     while dts[-1] < max_date:
-        dts.append(
-            dts[-1] + relativedelta(years=1)
-        )  # Approximation for a year
+        dts.append(dts[-1] + relativedelta(years=1))  # Approximation for a year
 
     # Extract years from the original dates and the generated date range
     years = {date.year for date in dates}
@@ -167,9 +163,7 @@ class RoundedDict:
         return value
 
 
-def drop_nans(
-    a: List[float], b: List[float]
-) -> Tuple[List[float], List[float]]:
+def drop_nans(a: List[float], b: List[float]) -> Tuple[List[float], List[float]]:
     """
     Removes NaN values from list `b` and their corresponding values in list `a`.
 
@@ -178,7 +172,7 @@ def drop_nans(
         b (List[float]): The second list of values, potentially containing NaNs.
 
     Returns:
-        Tuple[List[float], List[float]]: Two lists with NaNs removed from `b` and corresponding indices from `a`.
+        Tuple[List[float], List[float]]: lists with NaNs removed.
     """
     if len(a) != len(b):
         raise ValueError("The lengths of 'a' and 'b' must be equal.")

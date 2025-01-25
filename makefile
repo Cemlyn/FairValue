@@ -3,7 +3,7 @@ VENV = .venv
 PYTHON = $(VENV)/bin/python
 PIP = $(VENV)/bin/pip
 TESTS = tests/
-SRC = src/
+SRC = FairValue/
 REQS = requirements.txt
 
 .PHONY: install
@@ -22,4 +22,8 @@ test: # run unit tests
 
 .PHONY: fmt
 fmt:
-	black .
+	black --config pyproject.toml .
+
+.PHONY: lint
+lint: # Run pylint on the source code
+	pylint $(SRC)

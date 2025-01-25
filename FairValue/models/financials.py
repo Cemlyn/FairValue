@@ -1,5 +1,9 @@
-from typing import Optional
-from datetime import datetime
+from typing import (
+    Optional,
+)
+from datetime import (
+    datetime,
+)
 
 import pandas as pd
 from pydantic import (
@@ -10,20 +14,33 @@ from pydantic import (
     PositiveInt,
 )
 
-from FairValue.models.base import Floats, Strs, NonNegInts
-from FairValue.utils import fill_dates, series_to_list, check_for_missing_dates
-from FairValue.constants import DATE_FORMAT
+from fairvalue.models.base import (
+    Floats,
+    Strs,
+    NonNegInts,
+)
+from fairvalue.utils import (
+    fill_dates,
+    series_to_list,
+    check_for_missing_dates,
+)
+from fairvalue.constants import (
+    DATE_FORMAT,
+)
 
 
 class TickerFinancials(BaseModel):
     operating_cashflows: Optional[Floats] = Field(
-        None, description="Historic cashflows. Must be floats."
+        None,
+        description="Historic cashflows. Must be floats.",
     )
     capital_expenditures: Optional[Floats] = Field(
-        None, description="Historic capex. Must be floats."
+        None,
+        description="Historic capex. Must be floats.",
     )
     year_end_dates: Strs = Field(
-        ..., description="dates which each of the data points represent"
+        ...,
+        description="dates which each of the data points represent",
     )
     free_cashflows: Optional[Floats] = Field(
         None,
@@ -32,18 +49,17 @@ class TickerFinancials(BaseModel):
     shares_outstanding: NonNegInts = Field(description="Shares outstanding.")
 
     @model_validator(mode="before")
-    def validate_data(cls, model):
+    def validate_data(
+        cls,
+        model,
+    ):
 
         # check that captial expenditure and operating cashflows are provided if free_cashflow isn't
         if model["free_cashflows"] is None:
             if model["operating_cashflows"] is None:
-                raise ValueError(
-                    "If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided."
-                )
+                raise ValueError("If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided.")
             if model["operating_cashflows"] is None:
-                raise ValueError(
-                    "If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided."
-                )
+                raise ValueError("If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided.")
 
         # Ensure all required fields have the same length
         required_fields = [
@@ -53,18 +69,15 @@ class TickerFinancials(BaseModel):
             "shares_outstanding",
         ]
 
-        lengths = {
-            field: len(model[field])
-            for field in required_fields
-            if field in model
-        }
+        lengths = {field: len(model[field]) for field in required_fields if field in model}
         if len(set(lengths.values())) != 1:
-            raise ValueError(
-                f"All fields must have the same length, but got lengths: {lengths}."
-            )
+            raise ValueError(f"All fields must have the same length, but got lengths: {lengths}.")
 
         parsed_dates = [
-            datetime.strptime(date, DATE_FORMAT)
+            datetime.strptime(
+                date,
+                DATE_FORMAT,
+            )
             for date in model["year_end_dates"]
         ]
         years = [date.year for date in parsed_dates]
@@ -75,7 +88,10 @@ class TickerFinancials(BaseModel):
         return model
 
     @model_validator(mode="after")
-    def postprocessing(cls, model):
+    def postprocessing(
+        cls,
+        model,
+    ):
 
         # Calculate free_cashflows if not provided
         if model.free_cashflows is None:
@@ -85,7 +101,8 @@ class TickerFinancials(BaseModel):
                 data=[
                     ocf - capex
                     for ocf, capex in zip(
-                        operating_cashflows, capital_expenditures
+                        operating_cashflows,
+                        capital_expenditures,
                     )
                 ]
             )
@@ -116,21 +133,11 @@ class TickerFinancials(BaseModel):
             if df["shares_outstanding"].isna().mean():
                 raise ValidationError("shares outstanding contains nans.")
 
-            model.operating_cashflows = Floats(
-                data=series_to_list(df["operating_cashflows"].astype(float))
-            )
-            model.capital_expenditures = Floats(
-                data=series_to_list(df["capital_expenditures"].astype(float))
-            )
-            model.shares_outstanding = NonNegInts(
-                data=series_to_list(df["shares_outstanding"].astype(int))
-            )
-            model.year_end_dates = Strs(
-                data=series_to_list(df["year_end_dates"])
-            )
-            model.free_cashflows = Floats(
-                data=series_to_list(df["free_cashflows"].astype(float))
-            )
+            model.operating_cashflows = Floats(data=series_to_list(df["operating_cashflows"].astype(float)))
+            model.capital_expenditures = Floats(data=series_to_list(df["capital_expenditures"].astype(float)))
+            model.shares_outstanding = NonNegInts(data=series_to_list(df["shares_outstanding"].astype(int)))
+            model.year_end_dates = Strs(data=series_to_list(df["year_end_dates"]))
+            model.free_cashflows = Floats(data=series_to_list(df["free_cashflows"].astype(float)))
 
         return model
 
@@ -138,23 +145,25 @@ class TickerFinancials(BaseModel):
 class ForecastTickerFinancials(BaseModel):
 
     year_end_dates: Strs = Field(
-        ..., description="Dates which each of the data points represent."
+        ...,
+        description="Dates which each of the data points represent.",
     )
     free_cashflows: Floats = Field(
-        None, description="Annualised free cashflow. Must be floats."
+        None,
+        description="Annualised free cashflow. Must be floats.",
     )
     discount_rates: Floats = Field(
-        None, description="Annualised discount rate. Must be floats."
+        None,
+        description="Annualised discount rate. Must be floats.",
     )
-    shares_outstanding: PositiveInt = Field(
-        "Number of shares outstanding at the date the investor intends to sell."
-    )
-    terminal_growth: float = Field(
-        description="Terminal Rate used in Gordon Growth Model for terminal growth rate."
-    )
+    shares_outstanding: PositiveInt = Field("Number of shares outstanding at the date the investor intends to sell.")
+    terminal_growth: float = Field(description="Terminal Rate used in Gordon Growth Model for terminal growth rate.")
 
     @model_validator(mode="before")
-    def validate_data(cls, model):
+    def validate_data(
+        cls,
+        model,
+    ):
         # Ensure all required fields have the same length
         required_fields = [
             "year_end_dates",
@@ -162,18 +171,15 @@ class ForecastTickerFinancials(BaseModel):
             "discount_rates",
         ]
 
-        lengths = {
-            field: len(model[field])
-            for field in required_fields
-            if field in model
-        }
+        lengths = {field: len(model[field]) for field in required_fields if field in model}
         if len(set(lengths.values())) != 1:
-            raise ValueError(
-                f"All fields must have the same length, but got lengths: {lengths}."
-            )
+            raise ValueError(f"All fields must have the same length, but got lengths: {lengths}.")
 
         parsed_dates = [
-            datetime.strptime(date, DATE_FORMAT)
+            datetime.strptime(
+                date,
+                DATE_FORMAT,
+            )
             for date in model["year_end_dates"]
         ]
         years = [date.year for date in parsed_dates]
@@ -182,8 +188,6 @@ class ForecastTickerFinancials(BaseModel):
             raise ValueError("duplicate dates found in 'end' column.")
 
         if model["terminal_growth"] >= model["discount_rates"][-1]:
-            raise ValueError(
-                "Terminal Growth rate must be lower than the final discount rate."
-            )
+            raise ValueError("Terminal Growth rate must be lower than the final discount rate.")
 
         return model

@@ -4,8 +4,12 @@ Test fields required for intrinsic value calculation, that is:
 """
 
 import pytest
-from pydantic import ValidationError
-from FairValue.models.ingestion import CommonStockSharesOutstanding
+from pydantic import (
+    ValidationError,
+)
+from fairvalue.models.ingestion import (
+    CommonStockSharesOutstanding,
+)
 
 
 def test_common_stock_shares_outstanding():
