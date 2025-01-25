@@ -8,8 +8,8 @@ testpaths = [
 
 # Configuration for Black, the Python code formatter
 [tool.black]
-line-length = 190
-#skip-string-normalization = false  # Don't enforce double quotes
+target-version = ["py311"]
+#line-length = 130
 exclude = '''
 /(
     data

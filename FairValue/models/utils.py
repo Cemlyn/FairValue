@@ -18,5 +18,7 @@ def validate_date(
             "%Y-%m-%d",
         )
     except ValueError:
-        raise ValueError(f"Invalid Date field. '{field_name}' must be of the format 'YYYY-MM-DD'.")
+        raise ValueError(
+            f"Invalid Date field. '{field_name}' must be of the format 'YYYY-MM-DD'."
+        )
     return value

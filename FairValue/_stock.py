@@ -131,7 +131,9 @@ class Stock:
                 free_cashflows.append(fcf)
 
             free_cashflows = Floats(data=free_cashflows)
-            discount_rates = Floats(data=[discounting_rate for _ in range(number_of_years)])
+            discount_rates = Floats(
+                data=[discounting_rate for _ in range(number_of_years)]
+            )
             shares_outstanding = self.financials.shares_outstanding[-1]
             year_end_dates = Strs(data=generate_future_dates(n=number_of_years))
 
@@ -179,8 +181,14 @@ def calc_historical_features(
     )
 
     # free cashflow features which looks at trends in the financials
-    features["free_cashflow_yoy_amt"] = np.nan if len(fc_flows) < 2 else (fc_flows[-1] - fc_flows[-2])
-    features["free_cashflow_yoy_pct"] = np.nan if (len(fc_flows) < 2) or (fc_flows[-2] == 0) else (fc_flows[-1] / fc_flows[-2] - 1)
+    features["free_cashflow_yoy_amt"] = (
+        np.nan if len(fc_flows) < 2 else (fc_flows[-1] - fc_flows[-2])
+    )
+    features["free_cashflow_yoy_pct"] = (
+        np.nan
+        if (len(fc_flows) < 2) or (fc_flows[-2] == 0)
+        else (fc_flows[-1] / fc_flows[-2] - 1)
+    )
 
     # last 3, 5, 10 years
     for n in [
@@ -193,7 +201,9 @@ def calc_historical_features(
         # features[f"free_cashflow_mean_L{n}yrs"] = np.mean(fc_flows_slice)
         # features[f"free_cashflow_median_L{n}yrs"] = np.median(fc_flows_slice)
         # features[f"free_cashflow_std_L{n}yrs"] = np.std(fc_flows_slice)
-        features[f"free_cashflow_range_L{n}yrs"] = max(fc_flows_slice) - min(fc_flows_slice)
+        features[f"free_cashflow_range_L{n}yrs"] = max(fc_flows_slice) - min(
+            fc_flows_slice
+        )
         (
             features[f"free_cashflow_trend_L{n}yrs"],
             _,
@@ -203,13 +213,25 @@ def calc_historical_features(
             dates_slice,
             fc_flows_slice,
         )
-        features[f"free_cashflow_trend_L{n}yrs"] = features[f"free_cashflow_trend_L{n}yrs"] * MEAN_DAYS_IN_YEAR
-        features[f"free_cashflow_detrended_range_L{n}yrs"] = max(residuals) - min(residuals)
+        features[f"free_cashflow_trend_L{n}yrs"] = (
+            features[f"free_cashflow_trend_L{n}yrs"] * MEAN_DAYS_IN_YEAR
+        )
+        features[f"free_cashflow_detrended_range_L{n}yrs"] = max(residuals) - min(
+            residuals
+        )
         features[f"free_cashflow_detrended_std_L{n}yrs"] = np.std(residuals)
-        features[f"free_cashflow_perc_gt_zero_L{n}yrs"] = len([x for x in fc_flows_slice if x > 0]) / len(fc_flows_slice)
+        features[f"free_cashflow_perc_gt_zero_L{n}yrs"] = len(
+            [x for x in fc_flows_slice if x > 0]
+        ) / len(fc_flows_slice)
 
-        free_cashflows_yoy = [b - a for a, b in zip(fc_flows_slice[:-1], fc_flows_slice[1:])]
-        features[f"free_cashflow_perc_non_zero_growth_L{n}yrs"] = np.nan if len(free_cashflows_yoy) == 0 else len([x for x in free_cashflows_yoy if x > 0]) / len(free_cashflows_yoy)
+        free_cashflows_yoy = [
+            b - a for a, b in zip(fc_flows_slice[:-1], fc_flows_slice[1:])
+        ]
+        features[f"free_cashflow_perc_non_zero_growth_L{n}yrs"] = (
+            np.nan
+            if len(free_cashflows_yoy) == 0
+            else len([x for x in free_cashflows_yoy if x > 0]) / len(free_cashflows_yoy)
+        )
 
     return features
 
@@ -247,7 +269,9 @@ def calc_intrinsic_value(
         present_value_fcf += discounted_fcf
 
     # Calculate the terminal value
-    terminal_value = free_cashflows[-1] * (1 + terminal_growth) / (discount[-1] - terminal_growth)
+    terminal_value = (
+        free_cashflows[-1] * (1 + terminal_growth) / (discount[-1] - terminal_growth)
+    )
 
     # Discount the terminal value to present
     present_value_terminal = terminal_value / (1 + discount[-1]) ** len(free_cashflows)
@@ -257,6 +281,7 @@ def calc_intrinsic_value(
 
     response = {}
     response["shares_outstanding"] = shares_outstanding
+    response["latest_free_cashflow"] = free_cashflows[-1]
     response["future_cashflows"] = present_value_fcf
     response["terminal_value"] = terminal_value
     response["company_value"] = company_value
@@ -279,13 +304,21 @@ def cfacts_df_to_dict(
 ]:
 
     company_facts = dict()
-    company_facts["operating_cashflows"] = Floats(data=series_to_list(df.net_cashflow_ops.astype(float)))
-    company_facts["capital_expenditures"] = Floats(data=series_to_list(df.capital_expenditure.astype(float)))
+    company_facts["operating_cashflows"] = Floats(
+        data=series_to_list(df.net_cashflow_ops.astype(float))
+    )
+    company_facts["capital_expenditures"] = Floats(
+        data=series_to_list(df.capital_expenditure.astype(float))
+    )
     company_facts["year_end_dates"] = Strs(data=series_to_list(df["end"]))
-    company_facts["shares_outstanding"] = NonNegInts(data=series_to_list(df.shares_outstanding.astype(int)))
+    company_facts["shares_outstanding"] = NonNegInts(
+        data=series_to_list(df.shares_outstanding.astype(int))
+    )
 
     if "free_cashflows" in df:
 
-        company_facts["free_cashflows"] = Floats(data=series_to_list(df.free_cashflows.astype(float)))
+        company_facts["free_cashflows"] = Floats(
+            data=series_to_list(df.free_cashflows.astype(float))
+        )
 
     return company_facts

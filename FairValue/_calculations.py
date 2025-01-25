@@ -61,7 +61,9 @@ def daily_trend(
                 float,
             ),
         ):
-            raise ValueError("Amounts must contains values which aren't of type 'int' or 'float'")
+            raise ValueError(
+                "Amounts must contains values which aren't of type 'int' or 'float'"
+            )
 
     # Perform linear regression using numpy's polyfit
     (

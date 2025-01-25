@@ -90,7 +90,9 @@ def generate_future_dates(n: int) -> List[str]:
 
     today = dte.today()
 
-    future_dates = [(today + timedelta(days=365 * i)).strftime(DATE_FORMAT) for i in range(n)]
+    future_dates = [
+        (today + timedelta(days=365 * i)).strftime(DATE_FORMAT) for i in range(n)
+    ]
     return future_dates
 
 
