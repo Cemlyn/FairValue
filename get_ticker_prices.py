@@ -12,11 +12,11 @@ API_KEY = os.getenv(
     "POLYGON_API_KEY",
     default=None,
 )
-API_KEY = "HicWT_23n7WSfrv0ywH9_7lfefuix1me"
+# API_KEY = "HicWT_23n7WSfrv0ywH9_7lfefuix1me"
 
 # Base URL for Polygon.io
 BASE_URL = "https://api.polygon.io/v2/aggs/ticker"
-LATEST_DATE = "latest_10k"
+LATEST_DATE = "last_filing_date"
 
 
 def get_current_price(
@@ -56,10 +56,7 @@ def main(
         latest_dates,
     )
     counter = 0
-    for (
-        ticker,
-        latest_date,
-    ) in tqdm.tqdm(data):
+    for ticker, latest_date in tqdm.tqdm(data):
         counter += 1
         if pd.isnull(ticker) or pd.isnull(latest_date):
             price = {

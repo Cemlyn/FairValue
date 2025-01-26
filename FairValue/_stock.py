@@ -81,8 +81,7 @@ class Stock:
 
         today = date.today()
         last_filing_date = datetime.strptime(
-            self.financials.year_end_dates[-1],
-            DATE_FORMAT,
+            self.financials.year_end_dates[-1], DATE_FORMAT
         ).date()
 
         response = dict()
@@ -165,20 +164,12 @@ class Stock:
         return RoundedDict(response)._dict
 
 
-def calc_historical_features(
-    financials: TickerFinancials = None,
-) -> dict:
+def calc_historical_features(financials: TickerFinancials = None) -> dict:
 
     features = dict()
 
     # Free Cashflow trends
-    (
-        dates,
-        fc_flows,
-    ) = drop_nans(
-        financials.year_end_dates,
-        financials.free_cashflows,
-    )
+    dates, fc_flows = drop_nans(financials.year_end_dates, financials.free_cashflows)
 
     # free cashflow features which looks at trends in the financials
     features["free_cashflow_yoy_amt"] = (
@@ -191,16 +182,9 @@ def calc_historical_features(
     )
 
     # last 3, 5, 10 years
-    for n in [
-        3,
-        5,
-        10,
-    ]:
+    for n in [3, 5, 10]:
         fc_flows_slice = fc_flows[:n]
         dates_slice = dates[:n]
-        # features[f"free_cashflow_mean_L{n}yrs"] = np.mean(fc_flows_slice)
-        # features[f"free_cashflow_median_L{n}yrs"] = np.median(fc_flows_slice)
-        # features[f"free_cashflow_std_L{n}yrs"] = np.std(fc_flows_slice)
         features[f"free_cashflow_range_L{n}yrs"] = max(fc_flows_slice) - min(
             fc_flows_slice
         )
@@ -241,10 +225,7 @@ def calc_intrinsic_value(
     discount: List[float],
     terminal_growth: float,
     shares_outstanding: int,
-) -> Dict[
-    str,
-    float,
-]:
+) -> Dict[str, float]:
     """
     Calculate the intrinsic value of a series of free cash flows using
     the Discounted Cash Flow (DCF) method.
@@ -282,26 +263,15 @@ def calc_intrinsic_value(
     response = {}
     response["shares_outstanding"] = shares_outstanding
     response["latest_free_cashflow"] = free_cashflows[-1]
-    response["future_cashflows"] = present_value_fcf
-    response["terminal_value"] = terminal_value
     response["company_value"] = company_value
-    response["intrinsic_value"] = max(
-        0,
-        company_value,
-    ) / max(
-        1,
-        shares_outstanding,
+    response["intrinsic_value"] = np.where(
+        shares_outstanding > 0, company_value / shares_outstanding, np.nan
     )
 
     return response
 
 
-def cfacts_df_to_dict(
-    df: pd.DataFrame,
-) -> Dict[
-    str,
-    List,
-]:
+def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
 
     company_facts = dict()
     company_facts["operating_cashflows"] = Floats(

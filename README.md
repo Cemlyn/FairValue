@@ -18,10 +18,8 @@ make process-data
 - 1. handle multiple 10ks in the same year, e.g. multiple filings due to aquisition or merger.
 - 2. better handling of tickers with no shares outstanding
 - 3. include book value in valuation?
-- 4. MSTR: ValidationError: 1 validation error for CompanyFacts
-    facts.dei.EntityCommonStockSharesOutstanding
-    Field required [type=missing, input_value={'EntityPublicFloat': {'l...frame': 'CY2023Q2I'}]}}}, input_type=dict]
-        For further information visit https://errors.pydantic.dev/2.10/v/missing
+
 
 ## Data Quality Issues
 - {'cik':889936,'end':'2010-12-31','filed':'2013-02-22'}
+- Warner Media group (WM): EntityCommonStockSharesOutstanding states there's only 1069 when there is 142,614,118 class A shares, and 375,380,313 class B.
