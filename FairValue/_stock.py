@@ -1,6 +1,6 @@
 import warnings
 
-from typing import List, Dict, Tuple, Literal
+from typing import List, Dict, Tuple, Literal, Union
 from datetime import (
     date,
 )
@@ -44,6 +44,7 @@ class Stock:
         ticker_id: str = None,
         exchange: Literal["NYSE", "CBOE", "NASDAQ", "NONE"] = "NONE",
         cik: str = None,
+        latest_shares_outstanding: Union[int,None] = None,
         entityName: str = None,
         historical_financials: dict = None,
         forecasted_financials: dict = None,
@@ -59,6 +60,7 @@ class Stock:
         self.exchange = exchange
         self.cik = cik
         self.entityName = entityName
+        self.latest_shares_outstanding = latest_shares_outstanding
 
         if historical_financials:
             self.financials = TickerFinancials(**historical_financials)
@@ -110,7 +112,7 @@ class Stock:
                         or historical financials have been provided."
                 )
 
-            if self.financials.shares_outstanding[-1] == 0:
+            if self.latest_shares_outstanding == 0:
 
                 warnings.warn(
                     "FairValue cannot be made as there are no shares outstanding as of the \
@@ -133,14 +135,14 @@ class Stock:
             discount_rates = Floats(
                 data=[discounting_rate for _ in range(number_of_years)]
             )
-            shares_outstanding = self.financials.shares_outstanding[-1]
+            #shares_outstanding = self.latest_shares_outstanding
             year_end_dates = Strs(data=generate_future_dates(n=number_of_years))
 
-            forecast_financials = ForecastTickerFinancials(
+            forecast_financials = ForecastTickerFinancials( 
                 year_end_dates=year_end_dates,
                 free_cashflows=free_cashflows,
                 discount_rates=discount_rates,
-                shares_outstanding=shares_outstanding,
+                shares_outstanding=self.latest_shares_outstanding,
                 terminal_growth=g * (1 - growth_decay_rate),
             )
 

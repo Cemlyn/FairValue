@@ -108,6 +108,7 @@ def process_company_facts(
     df["cik"] = str(company_facts.cik)
     df["entityName"] = company_facts.entityName
     df["free_cashflows"] = df["net_cashflow_ops"] - df["capital_expenditure"]
+    df["latest_shares_outstanding"] = company_facts.latest_shares_outstanding
 
     # fetching the ticker from the ticker mapping
     cik_clean = str(company_facts.cik).lstrip("0")
@@ -171,32 +172,32 @@ if __name__ == "__main__":
     TICKER_DICT_FILEPATH = os.path.join(DIR, TICKER_DICT_FILENAME)
 
     # create a cik number to ticker mapping first
-    # if not os.path.isfile(TICKER_DICT_FILEPATH):
+    if not os.path.isfile(TICKER_DICT_FILEPATH):
 
-    #     files = os.listdir(os.path.join(DIR, SUBMISSIONS))
+        files = os.listdir(os.path.join(DIR, SUBMISSIONS))
 
-    #     ticker_dict = dict()
-    #     for file in tqdm.tqdm(files):
-    #         try:
-    #             submission = load_json(os.path.join(DIR, "submissions", file))
-    #         except json.JSONDecodeError:
-    #             continue
-    #         if ("cik" not in submission) or (submission["cik"] is None):
-    #             continue
-    #         cik = str(submission["cik"]).lstrip("0")
-    #         ticker_dict[cik] = search_ticker(submission)
+        ticker_dict = dict()
+        for file in tqdm.tqdm(files):
+            try:
+                submission = load_json(os.path.join(DIR, "submissions", file))
+            except json.JSONDecodeError:
+                continue
+            if ("cik" not in submission) or (submission["cik"] is None):
+                continue
+            cik = str(submission["cik"]).lstrip("0")
+            ticker_dict[cik] = search_ticker(submission)
 
-    #     with open(TICKER_DICT_FILEPATH, "wb") as file:
-    #         pickle.dump(ticker_dict, file)
+        with open(TICKER_DICT_FILEPATH, "wb") as file:
+            pickle.dump(ticker_dict, file)
 
-    # else:
-    #     with open(TICKER_DICT_FILEPATH, "rb") as file:
-    #         ticker_cik_map = pickle.load(file)
+    else:
+        with open(TICKER_DICT_FILEPATH, "rb") as file:
+            ticker_cik_map = pickle.load(file)
 
     # Now processing the Processing fillings and appending to jsonl files
-    # files = os.listdir(os.path.join(DIR, "companyfacts"))
+    files = os.listdir(os.path.join(DIR, "companyfacts"))
 
-    # output_filepath = check_filepath(OUTPUT)
+    output_filepath = check_filepath(OUTPUT)
 
     # for file in tqdm.tqdm(files):
     #     try:
@@ -224,7 +225,7 @@ if __name__ == "__main__":
     mask = (df.cik == 889900) & (df.end == "2021-12-31") & (df.filed == "2024-02-27")
     df.loc[mask, "shares_outstanding"] = -df.loc[mask, "shares_outstanding"]
 
-    mask = (df.cik == 889936) & (df.end == "	2010-12-31") & (df.filed == "2013-02-22")
+    mask = (df.cik == 889936) & (df.end == "2010-12-31") & (df.filed == "2013-02-22")
     df.loc[mask, "shares_outstanding"] = -df.loc[mask, "shares_outstanding"]
 
     df["shares_outstanding"] = df["shares_outstanding"].abs()
@@ -247,6 +248,7 @@ if __name__ == "__main__":
             exchange=cik_df.loc[:, "exchange"].iloc[0],
             entityName=entity_name,
             historical_financials=cik_data,
+            latest_shares_outstanding=cik_df.loc[:, "latest_shares_outstanding"].iloc[0],
         )
 
         stocks.append(stock.predict_fairvalue(historical_features=False))

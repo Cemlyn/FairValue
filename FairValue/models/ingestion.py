@@ -94,6 +94,8 @@ class CompanyFacts(BaseModel):
         default=None, exclude=True
     )
 
+    latest_shares_outstanding: Union[int,None] = Field(default=None, exclude=None)
+
     def __post_init_post_parse__(self):
         """
         This section:
@@ -205,6 +207,8 @@ class CompanyFacts(BaseModel):
 
         else:
             self.shares_outstanding = shares_outstanding
+
+        self.latest_shares_outstanding = self.shares_outstanding[-1].val
 
         # Bringing shares outstanding inline with capex and cashflows
         shares_outstanding_aligned = []
