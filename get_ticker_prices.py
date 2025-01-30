@@ -39,22 +39,14 @@ def get_current_price(
         return None
 
 
-def main(
-    csv_file,
-):
+def main(csv_file):
     """Read tickers from a CSV file and fetch their prices."""
-    df = pd.read_csv(
-        csv_file,
-        parse_dates=[LATEST_DATE],
-    )
+    df = pd.read_csv(csv_file, parse_dates=[LATEST_DATE])
     df[LATEST_DATE] = df[LATEST_DATE].dt.date
 
     tickers = df["ticker_id"].values.tolist()
     latest_dates = df[LATEST_DATE].values.tolist()
-    data = zip(
-        tickers,
-        latest_dates,
-    )
+    data = zip(tickers, latest_dates)
     counter = 0
     for ticker, latest_date in tqdm.tqdm(data):
         counter += 1

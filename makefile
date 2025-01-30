@@ -4,7 +4,6 @@ PYTHON = $(VENV)/bin/python
 PIP = $(VENV)/bin/pip
 TESTS = tests/
 SRC = FairValue/
-REQS = requirements.txt
 
 .PHONY: install
 install: venv # Install dependencies

@@ -44,8 +44,8 @@ class Stock:
         ticker_id: str = None,
         exchange: Literal["NYSE", "CBOE", "NASDAQ", "NONE"] = "NONE",
         cik: str = None,
-        latest_shares_outstanding: Union[int,None] = None,
-        entityName: str = None,
+        latest_shares_outstanding: Union[int, None] = None,
+        entity_name: str = None,
         historical_financials: dict = None,
         forecasted_financials: dict = None,
     ):
@@ -59,7 +59,7 @@ class Stock:
         self.ticker_id = ticker_id
         self.exchange = exchange
         self.cik = cik
-        self.entityName = entityName
+        self.entity_name = entity_name
         self.latest_shares_outstanding = latest_shares_outstanding
 
         if historical_financials:
@@ -81,6 +81,7 @@ class Stock:
         historical_features: bool = True,
     ) -> dict:
 
+        # pylint: disable=too-many-locals
         today = date.today()
         last_filing_date = datetime.strptime(
             self.financials.year_end_dates[-1], DATE_FORMAT
@@ -90,7 +91,7 @@ class Stock:
         response["ticker_id"] = self.ticker_id
         response["exchange"] = self.exchange
         response["cik"] = self.cik
-        response["entityName"] = self.entityName
+        response["entity_name"] = self.entity_name
         response["last_filing_date"] = self.financials.year_end_dates[-1]
         response["days_since_filiing"] = (today - last_filing_date).days
         response["number_of_historical_filings"] = len(self.financials.year_end_dates)
@@ -135,10 +136,10 @@ class Stock:
             discount_rates = Floats(
                 data=[discounting_rate for _ in range(number_of_years)]
             )
-            #shares_outstanding = self.latest_shares_outstanding
+            # shares_outstanding = self.latest_shares_outstanding
             year_end_dates = Strs(data=generate_future_dates(n=number_of_years))
 
-            forecast_financials = ForecastTickerFinancials( 
+            forecast_financials = ForecastTickerFinancials(
                 year_end_dates=year_end_dates,
                 free_cashflows=free_cashflows,
                 discount_rates=discount_rates,
@@ -162,6 +163,8 @@ class Stock:
         if historical_features and self.financials is not None:
             features = calc_historical_features(self.financials)
             response.update(features)
+
+        # pylint: enable=too-many-locals
 
         return RoundedDict(response)._dict
 
@@ -190,14 +193,8 @@ def calc_historical_features(financials: TickerFinancials = None) -> dict:
         features[f"free_cashflow_range_L{n}yrs"] = max(fc_flows_slice) - min(
             fc_flows_slice
         )
-        (
-            features[f"free_cashflow_trend_L{n}yrs"],
-            _,
-            _,
-            residuals,
-        ) = daily_trend(
-            dates_slice,
-            fc_flows_slice,
+        features[f"free_cashflow_trend_L{n}yrs"], _, _, residuals = daily_trend(
+            dates_slice, fc_flows_slice
         )
         features[f"free_cashflow_trend_L{n}yrs"] = (
             features[f"free_cashflow_trend_L{n}yrs"] * MEAN_DAYS_IN_YEAR

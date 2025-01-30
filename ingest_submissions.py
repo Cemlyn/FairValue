@@ -23,8 +23,6 @@ on the SEC website: https://www.sec.gov/Archives/edgar/daily-index/bulkdata/subm
 import os
 import json
 import pickle
-import logging
-from logging import StreamHandler, FileHandler
 from logging.config import dictConfig
 from typing import Dict
 

@@ -13,6 +13,10 @@ Once these files have been downloaded and unzipped running:
 make process-data
 ```
 
+```python
+make process-data
+```
+
 
 ## todo
 - 1. handle multiple 10ks in the same year, e.g. multiple filings due to aquisition or merger.

@@ -2,6 +2,8 @@ import copy
 from datetime import datetime
 from typing import List, Optional, Union, Literal, Dict
 
+import pandas as pd
+
 from pydantic import BaseModel, Field, field_validator
 from fairvalue.models.utils import validate_date
 from fairvalue.constants import DATE_FORMAT
@@ -94,7 +96,7 @@ class CompanyFacts(BaseModel):
         default=None, exclude=True
     )
 
-    latest_shares_outstanding: Union[int,None] = Field(default=None, exclude=None)
+    latest_shares_outstanding: Union[int, None] = Field(default=None, exclude=None)
 
     def __post_init_post_parse__(self):
         """
@@ -228,3 +230,72 @@ class CompanyFacts(BaseModel):
             shares_outstanding_aligned.append(op_cashflow_copy)
 
         self.shares_outstanding_aligned = shares_outstanding_aligned
+
+    def create_dataframe(self, ticker_mapping):
+        self.__post_init_post_parse__()
+
+        operating_cashflow_df = datum_to_dataframe(
+            self.operating_cashflow, "net_cashflow_ops"
+        )
+        operating_cashflow_df = operating_cashflow_df[
+            ~operating_cashflow_df["frame"].isna()
+        ]
+
+        shares_outstanding_df = datum_to_dataframe(
+            self.shares_outstanding_aligned, "shares_outstanding"
+        )
+        shares_outstanding_df = shares_outstanding_df[
+            ~shares_outstanding_df["frame"].isna()
+        ]
+
+        df = operating_cashflow_df.merge(
+            shares_outstanding_df[["filed", "end", "form", "shares_outstanding"]],
+            on=["filed", "end", "form"],
+        )
+
+        if self.capital_expenditure:
+            capital_expenditure_df = datum_to_dataframe(
+                self.capital_expenditure, "capital_expenditure"
+            )
+            df = df.merge(
+                capital_expenditure_df[["filed", "end", "form", "capital_expenditure"]],
+                on=["filed", "end", "form"],
+                how="left",
+            )
+            df["capital_expenditure"] = df["capital_expenditure"].fillna(0)
+        else:
+            df["capital_expenditure"] = 0
+
+        df["cik"] = str(self.cik)
+        df["entityName"] = self.entityName
+        df["free_cashflows"] = df["net_cashflow_ops"] - df["capital_expenditure"]
+        df["latest_shares_outstanding"] = self.latest_shares_outstanding
+
+        # fetching the ticker from the ticker mapping
+        cik_clean = str(self.cik).lstrip("0")
+
+        if cik_clean in ticker_mapping:
+            df["ticker"] = ticker_mapping[cik_clean]["ticker"]
+            df["exchange"] = ticker_mapping[cik_clean]["exchange"]
+
+        else:
+            df["ticker"] = None
+            df["exchange"] = None
+
+        return df
+
+
+def datum_to_dataframe(data, col_name):
+    return pd.DataFrame(
+        [
+            {
+                "end": datum.end,
+                "accn": datum.accn,
+                "form": datum.form,
+                "filed": datum.filed,
+                "frame": datum.frame,
+                col_name: datum.val,
+            }
+            for datum in data
+        ]
+    )

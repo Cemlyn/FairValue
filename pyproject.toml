@@ -9,7 +9,7 @@ testpaths = [
 # Configuration for Black, the Python code formatter
 [tool.black]
 target-version = ["py311"]
-#line-length = 130
+# line-length = 130
 exclude = '''
 /(
     data
@@ -18,6 +18,14 @@ exclude = '''
 )/
 '''
 
-# configuration for pylint
-[tool.pylint.'MESSAGES CONTROL']
-disable = ["missing-module-docstring","missing-function-docstring","missing-class-docstring"]
+# Configuration for Pylint
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "missing-module-docstring",
+    "missing-function-docstring",
+    "missing-class-docstring",
+    "too-many-arguments",
+    "too-many-positional-arguments",
+    "use-dict-literal"
+]
+max-line-length = 130

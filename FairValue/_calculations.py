@@ -19,13 +19,8 @@ from fairvalue.constants import (
 
 
 def daily_trend(
-    dates: List[str] = None,
-    amounts: List[float] = None,
-) -> Tuple[
-    float,
-    float,
-    List[float],
-]:
+    dates: List[str] = None, amounts: List[float] = None
+) -> Tuple[float, float, List[float]]:
     """
     Calculate the gradient (trend) in an amount in days.
 
@@ -44,36 +39,19 @@ def daily_trend(
     # Convert dates to ordinal numbers for numerical analysis
     try:
         date_ordinals = [
-            datetime.strptime(
-                date,
-                DATE_FORMAT,
-            ).toordinal()
-            for date in dates
+            datetime.strptime(date, DATE_FORMAT).toordinal() for date in dates
         ]
     except ValueError as e:
         raise ValueError("Ensure all dates are in the format 'YYYY-MM-DD'.") from e
 
     for amount in amounts:
-        if not isinstance(
-            amount,
-            (
-                int,
-                float,
-            ),
-        ):
+        if not isinstance(amount, (int, float)):
             raise ValueError(
                 "Amounts must contains values which aren't of type 'int' or 'float'"
             )
 
     # Perform linear regression using numpy's polyfit
-    (
-        slope,
-        intercept,
-    ) = np.polyfit(
-        date_ordinals,
-        amounts,
-        1,
-    )
+    slope, intercept = np.polyfit(date_ordinals, amounts, 1)
 
     # Calculate predicted values based on the trend line
     predicted = [slope * x + intercept for x in date_ordinals]
@@ -87,26 +65,13 @@ def daily_trend(
         )
     ]
 
-    return (
-        slope,
-        intercept,
-        predicted,
-        residuals,
-    )
+    return slope, intercept, predicted, residuals
 
 
 def detrend_series(
     dates: List[str] = None,
-    amounts: List[
-        Union[
-            float,
-            int,
-        ]
-    ] = None,
-    method: Literal[
-        "ols",
-        "huber",
-    ] = "ols",
+    amounts: List[Union[float, int]] = None,
+    method: Literal["ols", "huber"] = "ols",
 ) -> List[float]:
     """
     Detrends a time series using linear regression.
@@ -133,39 +98,20 @@ def detrend_series(
 
     # Convert dates to numeric values (e.g., days since the first date)
     date_numbers = [
-        (
-            datetime.strptime(
-                date,
-                "%Y-%m-%d",
-            )
-            - datetime.strptime(
-                dates[0],
-                "%Y-%m-%d",
-            )
-        ).days
+        datetime.strptime(date, "%Y-%m-%d")
+        - datetime.strptime(dates[0], "%Y-%m-%d").day
         for date in dates
     ]
 
     # Reshape for regression input
-    x = np.array(date_numbers).reshape(
-        -1,
-        1,
-    )
+    x = np.array(date_numbers).reshape(-1, 1)
     y = np.array(amounts)
 
-    # Choose regression model based on method
-    if method == "ols":
-        model = LinearRegression(fit_intercept=True)
-    elif method == "huber":
-        model = HuberRegressor(fit_intercept=True)
+    models = {"ols": LinearRegression, "huber": HuberRegressor}
 
-    # Fit the regression model
-    model.fit(
-        x,
-        y,
-    )
-
-    # Calculate trend (predicted values)
+    model = models[method]
+    model = model(fit_intercept=True)
+    model.fit(x, y)
     trend = model.predict(x)
 
     # Subtract trend from the original series
