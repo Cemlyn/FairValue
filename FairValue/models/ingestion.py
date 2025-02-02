@@ -1,4 +1,5 @@
 import copy
+import json
 from datetime import datetime
 from typing import List, Optional, Union, Literal, Dict
 
@@ -6,7 +7,17 @@ import pandas as pd
 
 from pydantic import BaseModel, Field, field_validator
 from fairvalue.models.utils import validate_date
-from fairvalue.constants import DATE_FORMAT
+from fairvalue.constants import STATE_OF_INCORP_DICT
+
+
+def fetch_state_dict():
+    with open(STATE_OF_INCORP_DICT, "r", encoding="utf-8") as file:
+        data = json.load(file)
+    return data
+
+
+state_dict = fetch_state_dict()
+states_list = list(state_dict.keys())
 
 
 class Datum(BaseModel):
@@ -54,248 +65,159 @@ class FinancialMetric(BaseModel):
 
 
 class USGaap(BaseModel):
-
     NetCashProvidedByUsedInOperatingActivities: FinancialMetric
     PaymentsToAcquirePropertyPlantAndEquipment: Optional[FinancialMetric] = None
-
     model_config = {"extra": "allow"}
 
 
 class Dei(BaseModel):
-
     EntityCommonStockSharesOutstanding: FinancialMetric
     EntityPublicFloat: Optional[FinancialMetric] = None
     EntityListingDepositoryReceiptRatio: Optional[FinancialMetric] = None
-
     model_config = {"extra": "allow"}
 
 
 class Facts(BaseModel):
-
     dei: Dei
     us_gaap: USGaap = Field(alias="us-gaap")
 
 
-class ParseException(Exception):
-    pass
+class Submissions(BaseModel):
+    cik: Union[str, int]
+    entityType: Optional[str] = None
+    sic: Optional[str] = None
+    sicDescription: Optional[str] = None
+    name: Optional[str] = None
+    tickers: List[str]
+    exchanges: List[str]
+    stateOfIncorporationDescription: Literal[
+        "AK",
+        "AL",
+        "AR",
+        "AZ",
+        "Alberta, Canada",
+        "Anguilla",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Australia",
+        "Bahamas",
+        "Belgium",
+        "Bermuda",
+        "Brazil",
+        "British Columbia, Canada",
+        "British Indian Ocean Territory",
+        "CA",
+        "CO",
+        "CT",
+        "Canada (Federal Level)",
+        "Cayman Islands",
+        "Chile",
+        "China",
+        "Colombia",
+        "Cyprus",
+        "DC",
+        "DE",
+        "Denmark",
+        "FL",
+        "Finland",
+        "France",
+        "GA",
+        "Germany",
+        "Gibraltar",
+        "Grenada",
+        "Guam",
+        "Guernsey",
+        "HI",
+        "Hong Kong",
+        "IA",
+        "ID",
+        "IL",
+        "IN",
+        "India",
+        "Ireland",
+        "Isle of Man",
+        "Israel",
+        "Italy",
+        "Japan",
+        "Jersey",
+        "KS",
+        "KY",
+        "Kazakhstan",
+        "Korea, Republic of",
+        "LA",
+        "Luxembourg",
+        "MA",
+        "MD",
+        "ME",
+        "MI",
+        "MN",
+        "MO",
+        "MS",
+        "MT",
+        "Malaysia",
+        "Manitoba, Canada",
+        "Marshall Islands",
+        "Mauritius",
+        "Mexico",
+        "NC",
+        "ND",
+        "NE",
+        "NH",
+        "NJ",
+        "NM",
+        "NV",
+        "NY",
+        "Netherlands",
+        "Netherlands Antilles",
+        "New Brunswick, Canada",
+        "New Zealand",
+        "Newfoundland, Canada",
+        "Norway",
+        "Nova Scotia, Canada",
+        "OH",
+        "OK",
+        "OR",
+        "Ontario, Canada",
+        "PA",
+        "Panama",
+        "Peru",
+        "Puerto Rico",
+        "Quebec, Canada",
+        "RI",
+        "Russian Federation",
+        "SC",
+        "SD",
+        "Singapore",
+        "South Africa",
+        "Spain",
+        "Sweden",
+        "Switzerland",
+        "TN",
+        "TX",
+        "Taiwan, Province of China",
+        "Turkey",
+        "UT",
+        "United Kingdom",
+        "Unknown",
+        "VA",
+        "VT",
+        "Virgin Islands, British",
+        "Virgin Islands, U.S.",
+        "WA",
+        "WI",
+        "WV",
+        "WY",
+        "X1",
+        "Yukon, Canada",
+    ]
 
 
 class CompanyFacts(BaseModel):
-
     cik: Union[str, int]
     entityName: str
     facts: Facts
 
-    # awd
-    operating_cashflow: Union[FinancialMetric, None] = Field(default=None, exclude=True)
-    capital_expenditure: Union[FinancialMetric, None] = Field(
-        default=None, exclude=True
-    )
-    shares_outstanding: Union[FinancialMetric, None] = Field(default=None, exclude=True)
-    shares_outstanding_aligned: Union[FinancialMetric, None] = Field(
-        default=None, exclude=True
-    )
 
-    latest_shares_outstanding: Union[int, None] = Field(default=None, exclude=None)
-
-    def __post_init_post_parse__(self):
-        """
-        This section:
-        0. Removes leading zeros from the cik
-        1. Tries to populate the operating_cashflow and capital_expenditures attributes.
-        2. For foreign stocks like BABA it will try to apply conversions from the CNY to USD equivalent:
-            2.0: convert shares_outstanding to their NYSE or NASDAQ equivalent volume.
-            2.1: ensure that financials in the foreign currency are provided not the holding companies.
-        3. Brings the shares outstanding inline with captial_expenditure and operating cashflows w.r.t dates.
-        """
-
-        self.cik = str(self.cik).lstrip("0")
-
-        is_foreign = False
-
-        currencies = list(
-            self.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units.keys()
-        )
-        count_currencies = len(currencies)
-
-        capital_expenditure = None
-        if count_currencies == 0:
-            raise ParseException("Unable to parse filing. Missing currency data.")
-
-        elif count_currencies == 1:
-            if "USD" not in currencies:
-                raise ParseException("Unable to parse filing. Missing currency data.")
-            operating_cashflow = (
-                self.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units[
-                    "USD"
-                ]
-            )
-            if hasattr(
-                self.facts.us_gaap, "PaymentsToAcquirePropertyPlantAndEquipment"
-            ) and hasattr(
-                self.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment, "units"
-            ):
-                capital_expenditure = (
-                    self.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units[
-                        "USD"
-                    ]
-                )
-
-        elif count_currencies == 2:
-            if "USD" not in currencies:
-                raise ParseException(
-                    "Unable to parse filing. Mutliple non-USD currencies found."
-                )
-
-            is_foreign = True
-            currencies = [curr for curr in currencies if curr != "USD"]
-            (currency,) = currencies
-            operating_cashflow = (
-                self.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units[
-                    currency
-                ]
-            )
-            if self.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment:
-                capital_expenditure = (
-                    self.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units[
-                        currency
-                    ]
-                )
-
-        else:
-            raise ParseException(
-                "Unable to parse filing. Mutliple non-USD currencies found."
-            )
-
-        self.operating_cashflow = operating_cashflow
-        self.capital_expenditure = capital_expenditure
-
-        shares_outstanding = self.facts.dei.EntityCommonStockSharesOutstanding.units[
-            "shares"
-        ]
-
-        # Converting shares outstanding into their USD equivalent
-        if is_foreign:
-
-            if hasattr(
-                self.facts.dei, "EntityListingDepositoryReceiptRatio"
-            ) and hasattr(self.facts.dei.EntityListingDepositoryReceiptRatio, "units"):
-                adr_ratios = self.facts.dei.EntityListingDepositoryReceiptRatio.units[
-                    "pure"
-                ]
-            else:
-                raise ParseException(
-                    "Could not find EntityListingDepositoryReceiptRatio in filing."
-                )
-
-            shares_outstanding_adj = []
-            for share_count in shares_outstanding:
-
-                share_count_date = datetime.strptime(share_count.end, DATE_FORMAT)
-
-                for n, adr_ratio in enumerate(adr_ratios):
-
-                    adr_ratio_date = datetime.strptime(adr_ratio.end, DATE_FORMAT)
-                    if adr_ratio_date > share_count_date:
-                        break
-
-                share_count_copy = copy.deepcopy(share_count)
-                share_count_adj = share_count_copy.val / adr_ratios[n - 1].val
-                share_count_copy.val = share_count_adj
-
-                shares_outstanding_adj.append(share_count_copy)
-
-            self.shares_outstanding = shares_outstanding
-
-        else:
-            self.shares_outstanding = shares_outstanding
-
-        self.latest_shares_outstanding = self.shares_outstanding[-1].val
-
-        # Bringing shares outstanding inline with capex and cashflows
-        shares_outstanding_aligned = []
-        for op_cashflow in self.operating_cashflow:
-
-            op_cashflow_date = datetime.strptime(op_cashflow.end, DATE_FORMAT)
-
-            for n, share_count in enumerate(self.shares_outstanding):
-
-                op_cf_date = datetime.strptime(share_count.end, DATE_FORMAT)
-                if op_cf_date > op_cashflow_date:
-                    break
-
-            op_cashflow_copy = copy.deepcopy(op_cashflow)
-            op_cashflow_copy.val = self.shares_outstanding[n - 1].val
-
-            shares_outstanding_aligned.append(op_cashflow_copy)
-
-        self.shares_outstanding_aligned = shares_outstanding_aligned
-
-    def create_dataframe(self, ticker_mapping):
-        self.__post_init_post_parse__()
-
-        operating_cashflow_df = datum_to_dataframe(
-            self.operating_cashflow, "net_cashflow_ops"
-        )
-        operating_cashflow_df = operating_cashflow_df[
-            ~operating_cashflow_df["frame"].isna()
-        ]
-
-        shares_outstanding_df = datum_to_dataframe(
-            self.shares_outstanding_aligned, "shares_outstanding"
-        )
-        shares_outstanding_df = shares_outstanding_df[
-            ~shares_outstanding_df["frame"].isna()
-        ]
-
-        df = operating_cashflow_df.merge(
-            shares_outstanding_df[["filed", "end", "form", "shares_outstanding"]],
-            on=["filed", "end", "form"],
-        )
-
-        if self.capital_expenditure:
-            capital_expenditure_df = datum_to_dataframe(
-                self.capital_expenditure, "capital_expenditure"
-            )
-            df = df.merge(
-                capital_expenditure_df[["filed", "end", "form", "capital_expenditure"]],
-                on=["filed", "end", "form"],
-                how="left",
-            )
-            df["capital_expenditure"] = df["capital_expenditure"].fillna(0)
-        else:
-            df["capital_expenditure"] = 0
-
-        df["cik"] = str(self.cik)
-        df["entityName"] = self.entityName
-        df["free_cashflows"] = df["net_cashflow_ops"] - df["capital_expenditure"]
-        df["latest_shares_outstanding"] = self.latest_shares_outstanding
-
-        # fetching the ticker from the ticker mapping
-        cik_clean = str(self.cik).lstrip("0")
-
-        if cik_clean in ticker_mapping:
-            df["ticker"] = ticker_mapping[cik_clean]["ticker"]
-            df["exchange"] = ticker_mapping[cik_clean]["exchange"]
-
-        else:
-            df["ticker"] = None
-            df["exchange"] = None
-
-        return df
-
-
-def datum_to_dataframe(data, col_name):
-    return pd.DataFrame(
-        [
-            {
-                "end": datum.end,
-                "accn": datum.accn,
-                "form": datum.form,
-                "filed": datum.filed,
-                "frame": datum.frame,
-                col_name: datum.val,
-            }
-            for datum in data
-        ]
-    )
+class SECFillings(BaseModel):
+    companyfacts: CompanyFacts
+    submissions: Submissions

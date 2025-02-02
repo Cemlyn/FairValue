@@ -17,11 +17,11 @@ make process-data
 make process-data
 ```
 
-
-## todo
-- 1. handle multiple 10ks in the same year, e.g. multiple filings due to aquisition or merger.
-- 2. better handling of tickers with no shares outstanding
-- 3. include book value in valuation?
+## Gaps
+Right now it does not process companies which fall into the categories below. During ingestion these companies will fail validation:
+- blank check companies or SPACs
+- Companies incorporated in outside the USA
+- Companies who have non-USD currencies listed on the net ops cashfow or capital expenditures.
 
 
 ## Data Quality Issues

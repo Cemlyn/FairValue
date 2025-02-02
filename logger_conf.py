@@ -17,7 +17,7 @@ class JsonFormatter(logging.Formatter):
 
 
 def get_logger(
-    logger_name: str, log_file: str = "sec_pipeline.jsonl", level=logging.INFO
+    logger_name: str, log_file: str = "ingestion_logs.jsonl", level=logging.INFO
 ):
 
     logger = logging.getLogger(logger_name)
