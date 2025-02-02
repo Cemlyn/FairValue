@@ -6,23 +6,19 @@ a time ordered sturctured array which can be represented by a pandas dataframe.
 
 The script handles the following:
 
-1. Loads companyfacts data files from a specified directory ('data/companyfacts').
-2. Passes it to a pydantic data model to:
-    - collect known items and verifiy their data types
-    - align multiple times-series into a single times series, ie.:
-        - net operating cash
-        - capital expenditures
-        - shares outstanding
-        - if not present calculate a free cashflow
+1. Loads submissions data files from a specified directory ('data/submissions').
+2. Loads companyfacts data files from a specified directory ('data/companyfacts').
+3. Passes them to a series of pydantic data models which seperately validates the 
+    structure of the files and then passes them onto a SECfilling pydantic model
+    which selects data of interest and saves it to a jsonl files
 
 ### Key Notes:
 - The output is a jsonlines file called 'company_facts.jsonl'. Items in the file can 
     be easily passed to the 'Stock' class to run the discounted cashflow calculation.
 - Is hard coded to only calculate times series on an annualised basis.
 
-Ensure the `data/companyfacts` directory exists, where the companyfacts folder is the extracted
-content of the bulk companyfacts.zip file which can be found 
-on the SEC website: http://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip 
+Ensure the `data/companyfacts` and `data/submissiosn` directories exist. These can be 
+downloaded from the sec website: http://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip 
 """
 
 import os
@@ -69,9 +65,7 @@ if __name__ == "__main__":
             financials_records = financials_df.to_dict(orient="records")
             for record in financials_records:
                 json_line = json.dumps(record)
-                with open(
-                    os.path.join(DIR, OUTPUT_FILE), "a", encoding="utf-8"
-                ) as f:
+                with open(os.path.join(DIR, OUTPUT_FILE), "a", encoding="utf-8") as f:
                     f.write(json_line + "\n")
 
             logger.info(f"Sucessfully processed file '%s'", file)

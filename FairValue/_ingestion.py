@@ -24,25 +24,45 @@ def fetch_state_dict():
 
 state_dict = fetch_state_dict()
 
+
 def check_for_foreign_currencies(sec_filing: SECFillings) -> bool:
 
-    if "USD" not in sec_filing.companyfacts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units:
-        return True
-    
-    if len(sec_filing.companyfacts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units)>1:
+    if (
+        "USD"
+        not in sec_filing.companyfacts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units
+    ):
         return True
 
-    if sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment is not None:
-        if "USD" not in sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment:
+    if (
+        len(
+            sec_filing.companyfacts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units
+        )
+        > 1
+    ):
+        return True
+
+    if (
+        sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment
+        is not None
+    ):
+        if (
+            "USD"
+            not in sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment
+        ):
             return True
-        if len(sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units):
+        if len(
+            sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units
+        ):
             return True
-    
+
     return False
+
 
 def secfiling_to_financials(sec_filing: SECFillings) -> TickerFinancials:
 
-    is_foreign = (not state_dict[sec_filing.submissions.stateOfIncorporationDescription]) or check_for_foreign_currencies(sec_filing)
+    is_foreign = (
+        not state_dict[sec_filing.submissions.stateOfIncorporationDescription]
+    ) or check_for_foreign_currencies(sec_filing)
 
     if is_foreign:
         raise ParseException(
@@ -152,6 +172,7 @@ def secfiling_to_financials(sec_filing: SECFillings) -> TickerFinancials:
     financials_df["cik"] = sec_filing.companyfacts.cik
     ticker_and_exchange = search_ticker(sec_filing.submissions)
     financials_df["ticker"] = ticker_and_exchange["ticker"]
+    financials_df["entityName"] = sec_filing.companyfacts.entityName
     financials_df["exchange"] = ticker_and_exchange["exchange"]
     financials_df["latest_shares_outstanding"] = latest_shares_outstanding
     financials_df["is_foreign"] = is_foreign
