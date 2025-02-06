@@ -18,10 +18,12 @@ make process-data
 ```
 
 ## Gaps
-Right now it does not process companies which fall into the categories below. During ingestion these companies will fail validation:
-- blank check companies or SPACs
-- Companies incorporated in outside the USA
-- Companies who have non-USD currencies listed on the net ops cashfow or capital expenditures.
+1. Does not process companies which fall into the categories below. During ingestion these companies will fail validation:
+    - blank check companies or SPACs
+    - Companies incorporated in outside the USA
+    - Companies who have non-USD currencies listed on the net ops cashfow or capital expenditures.
+
+2. Intrinsic Valuecalculation does not factor in debt and book value, being purely based on free cashflow.
 
 
 ## Data Quality Issues

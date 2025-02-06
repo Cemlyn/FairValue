@@ -7,13 +7,14 @@ freecashflow calculation.
 """
 
 import os
+import csv
 from typing import Dict, List
 
 import pandas as pd
 
 from fairvalue import Stock
 from fairvalue.utils import series_to_list
-from fairvalue.models.base import Floats, Strs, NonNegInts
+from fairvalue.models.base import Floats, Strs, NonNegInts, NonNegFloats
 from fairvalue.constants import (
     DATE_FORMAT,
     CAPITAL_EXPENDITURE,
@@ -22,6 +23,8 @@ from fairvalue.constants import (
     SHARES_OUTSTANDING,
 )
 from logger_conf import get_logger
+
+from fairvalue._exceptions import FairValueException
 
 logger = get_logger("ingestion")
 
@@ -34,7 +37,7 @@ def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
     company_facts[NET_CASHFLOW_OPS] = Floats(
         data=series_to_list(df.net_cashflow_ops.astype(float))
     )
-    company_facts[CAPITAL_EXPENDITURE] = Floats(
+    company_facts[CAPITAL_EXPENDITURE] = NonNegFloats(
         data=series_to_list(df.capital_expenditure.astype(float))
     )
     company_facts["year_end_dates"] = Strs(data=series_to_list(df["end"]))
@@ -78,25 +81,50 @@ if __name__ == "__main__":
     stocks = []
     for cik_id, cik_df in df.groupby("cik"):
 
-        stock = Stock(
-            ticker_id=cik_df.loc[:, "ticker"].iloc[0],
-            exchange=cik_df.loc[:, "exchange"].iloc[0],
-            cik=str(cik_df.loc[:, "cik"].iloc[0]),
-            latest_shares_outstanding=cik_df.loc[:, "latest_shares_outstanding"].iloc[
-                0
-            ],
-            entity_name=cik_df.loc[:, "entityName"].iloc[0],
-            historical_financials=cfacts_df_to_dict(cik_df),
-        )
+        try:
+            stock = Stock(
+                ticker_id=cik_df.loc[:, "ticker"].iloc[0],
+                exchange=cik_df.loc[:, "exchange"].iloc[0],
+                cik=str(cik_df.loc[:, "cik"].iloc[0]),
+                latest_shares_outstanding=cik_df.loc[
+                    :, "latest_shares_outstanding"
+                ].iloc[0],
+                entity_name=cik_df.loc[:, "entityName"].iloc[0],
+                historical_financials=cfacts_df_to_dict(cik_df),
+            )
 
-        intrinsic_value = stock.predict_fairvalue(
-            growth_rate=0.0,
-            growth_decay_rate=0.01,
-            discounting_rate=0.05,
-            number_of_years=10,
-        )
-        stocks.append(intrinsic_value)
+            intrinsic_value = stock.predict_fairvalue(
+                growth_rate=0.0,
+                growth_decay_rate=0.01,
+                discounting_rate=0.05,
+                number_of_years=10,
+            )
+            stocks.append(intrinsic_value)
 
-    pd.DataFrame(stocks).sort_values(by=["last_filing_date"], ascending=False).to_csv(
-        os.path.join(DIR, "intrinsic_value.csv"), index=False
+        except FairValueException as e:
+            print(f"Skipped!, {e}")
+
+    # import json
+    # with open('test.json','w') as file:
+    #     json.dump(stocks,file)
+
+    df = pd.DataFrame(stocks)  # .sort_values(by=["last_filing_date"], ascending=False)
+    # columns = df.columns.tolist()
+    # priority_cols = [
+    #     "ticker_id",
+    #     "entity_name",
+    #     "cik",
+    #     "exchange",
+    #     "shares_outstanding",
+    #     "latest_free_cashflow",
+    #     "company_value",
+    #     "intrinsic_value",
+    #     "last_filing_date",
+    # ]
+    # other_cols = [x for x in columns if x not in priority_cols]
+    # df[priority_cols + other_cols].to_csv(
+    #     os.path.join(DIR, "intrinsic_value.csv"), index=False, quoting=csv.QUOTE_MINIMAL
+    # )
+    df.to_csv(
+        os.path.join(DIR, "intrinsic_value.csv"), index=False, quoting=csv.QUOTE_MINIMAL
     )

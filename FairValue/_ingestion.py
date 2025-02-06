@@ -47,11 +47,14 @@ def check_for_foreign_currencies(sec_filing: SECFillings) -> bool:
     ):
         if (
             "USD"
-            not in sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment
+            not in sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units
         ):
             return True
-        if len(
-            sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units
+        if (
+            len(
+                sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units
+            )
+            > 1
         ):
             return True
 
@@ -167,7 +170,13 @@ def secfiling_to_financials(sec_filing: SECFillings) -> TickerFinancials:
             how="left",
         )
     else:
-        financials_df[CAPITAL_EXPENDITURE] = 0
+        financials_df[CAPITAL_EXPENDITURE] = 0.00
+
+    financials_df[CAPITAL_EXPENDITURE] = financials_df[CAPITAL_EXPENDITURE].astype(
+        float
+    )
+    financials_df[NET_CASHFLOW_OPS] = financials_df[NET_CASHFLOW_OPS].astype(float)
+    financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].astype(int)
 
     financials_df["cik"] = sec_filing.companyfacts.cik
     ticker_and_exchange = search_ticker(sec_filing.submissions)
@@ -179,14 +188,6 @@ def secfiling_to_financials(sec_filing: SECFillings) -> TickerFinancials:
     financials_df["state_of_incorporation"] = (
         sec_filing.submissions.stateOfIncorporationDescription
     )
-
-    # financials = TickerFinancials(
-    #     operating_cashflows=None,
-    #     capital_expenditures=None,
-    #     year_end_dates=None,
-    #     free_cashflows=None,
-    #     shares_outstanding=latest_shares_outstanding,
-    # )
 
     return financials_df
 

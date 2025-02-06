@@ -31,17 +31,18 @@ class Datum(BaseModel):
     """
 
     end: str  # Must be a valid date
-    val: int
+    val: Union[int, float]
     accn: Optional[str] = None
     fy: Optional[int] = None
     fp: Optional[str] = None
-    form: Literal["10-K", "20-F", "6-K", "20-F/A", "10-Q", "10-Q/A", "10-K/A"]
+    form: Literal["10-K", "20-F", "6-K", "20-F/A", "10-Q", "10-Q/A", "10-K/A", "8-K"]
     filed: str  # Must be a valid date
     frame: Optional[str] = None
 
     @field_validator("end", "filed", mode="before")
-    def validate_end(cls, value):
-        return validate_date("end", value)
+    @classmethod
+    def validate_end(cls, value, info):
+        return validate_date(info.field_name, value)
 
 
 class FinancialMetric(BaseModel):
@@ -64,10 +65,38 @@ class FinancialMetric(BaseModel):
         return value
 
 
+# class USGaap(BaseModel):
+#     NetCashProvidedByUsedInOperatingActivities: FinancialMetric
+#     PaymentsToAcquirePropertyPlantAndEquipment: Optional[FinancialMetric] = None
+#     model_config = {"extra": "allow"}
+
+
 class USGaap(BaseModel):
     NetCashProvidedByUsedInOperatingActivities: FinancialMetric
     PaymentsToAcquirePropertyPlantAndEquipment: Optional[FinancialMetric] = None
     model_config = {"extra": "allow"}
+
+    @field_validator("NetCashProvidedByUsedInOperatingActivities", mode="after")
+    @classmethod
+    def convert_to_float(cls, value):
+        """Ensure this value is always a float."""
+        if isinstance(value, FinancialMetric):
+            for currency, data_list in value.units.items():
+                for datum in data_list:
+                    datum.val = float(datum.val)  # Convert to float
+        return value
+
+    @field_validator("PaymentsToAcquirePropertyPlantAndEquipment", mode="after")
+    @classmethod
+    def convert_to_non_negative_float(cls, value):
+        """Ensure this value is always a non-negative float."""
+        if value is not None and isinstance(value, FinancialMetric):
+            for currency, data_list in value.units.items():
+                for datum in data_list:
+                    datum.val = max(
+                        0.0, float(datum.val)
+                    )  # Convert to float and enforce non-negativity
+        return value
 
 
 class Dei(BaseModel):
@@ -216,6 +245,12 @@ class CompanyFacts(BaseModel):
     cik: Union[str, int]
     entityName: str
     facts: Facts
+
+    @field_validator("cik", mode="after")
+    @classmethod
+    def convert_cik_to_str(cls, value):
+        """Accept int or str, but always hold cik as string."""
+        return str(value)
 
 
 class SECFillings(BaseModel):

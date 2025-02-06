@@ -1,6 +1,6 @@
 import warnings
 
-from typing import List, Dict, Tuple, Literal, Union
+from typing import List, Dict, Literal, Union, Tuple
 from datetime import (
     date,
 )
@@ -21,20 +21,20 @@ from fairvalue.models.financials import (
     TickerFinancials,
     ForecastTickerFinancials,
 )
-from fairvalue.models.base import (
-    Floats,
-    Strs,
-    NonNegInts,
-)
+from fairvalue.models.base import Floats, Strs, NonNegInts, NonNegFloats
+
+from fairvalue.models.utils import validate_date
+
 from fairvalue._calculations import (
     daily_trend,
-    detrend_series,
 )
 
 from fairvalue.constants import (
     DATE_FORMAT,
     MEAN_DAYS_IN_YEAR,
 )
+
+from fairvalue._exceptions import FairValueException
 
 
 class Stock:
@@ -47,7 +47,6 @@ class Stock:
         latest_shares_outstanding: Union[int, None] = None,
         entity_name: str = None,
         historical_financials: dict = None,
-        forecasted_financials: dict = None,
     ):
         """
         Initialize the CompanyFinancials class with a DataFrame.
@@ -60,6 +59,11 @@ class Stock:
         self.exchange = exchange
         self.cik = cik
         self.entity_name = entity_name
+
+        if latest_shares_outstanding is None:
+            raise FairValueException(
+                "FairValue does not support tickers with zero shares outstanding."
+            )
         self.latest_shares_outstanding = latest_shares_outstanding
 
         if historical_financials:
@@ -67,10 +71,49 @@ class Stock:
         else:
             self.financials = None
 
-        if forecasted_financials:
-            self.forecast_financials = ForecastTickerFinancials(**forecasted_financials)
-        else:
-            self.forecast_financials = None
+    def fetch_latest_financials(
+        self, date: Union[str, datetime.date] = None
+    ) -> TickerFinancials:
+
+        if self.financials is None:
+            raise ValueError(
+                "Unable to fetch latest historical financials. finanicals are 'None'"
+            )
+
+        if date is None:
+            raise ValueError("date must be string of format '%Y-%m-%d'")
+
+        if isinstance(date, str):
+            date = datetime.strptime(date, DATE_FORMAT)
+
+        for n, x in enumerate(self.financials.year_end_dates):
+            year_end_date_obj = datetime.strptime(x, DATE_FORMAT)
+            if date < year_end_date_obj:
+                if n == 0:
+                    raise FairValueException(
+                        f"Unable to retrieve financials before the date '{date}'"
+                    )
+                break
+
+        free_cashflows = self.financials.free_cashflows[: n - 1]
+        year_end_dates = self.financials.year_end_dates[: n - 1]
+        shares_outstanding = self.latest_shares_outstanding
+
+        if self.financials.capital_expenditures is not None:
+            capital_expenditures = self.financials.capital_expenditures[: n - 1]
+            return TickerFinancials(
+                free_cashflows=Floats(data=free_cashflows),
+                capital_expenditures=NonNegFloats(data=capital_expenditures),
+                year_end_dates=Strs(data=year_end_dates),
+                shares_outstanding=NonNegInts(data=[int(shares_outstanding)] * (n + 1)),
+            )
+
+        return TickerFinancials(
+            free_cashflows=Floats(data=free_cashflows),
+            year_end_dates=Strs(data=year_end_dates),
+            capital_expenditures=NonNegFloats(data=[1.0] * (n - 1)),
+            shares_outstanding=NonNegInts(data=[int(shares_outstanding)] * (n + 1)),
+        )
 
     def predict_fairvalue(
         self,
@@ -79,12 +122,31 @@ class Stock:
         discounting_rate: float = 0.05,
         number_of_years: int = 10,
         historical_features: bool = True,
+        forecast_financials: ForecastTickerFinancials = None,
     ) -> dict:
+        """
+        Generate a quick fairvalue estimate using the latest financials for a company, projecting
+        them forward using a growth, growth decay rate and discounting rate
+
+        Args:
+            growth_rate (float): Project yoy growth for free cashflows
+            growth_decay_rate (float): Add a second order gradient to the rate of change of
+                free cashflows
+            discounting_rate (float): rate of discounting to apply, i.e. the risk free rate
+            number_of_years (int): number of years to project the forecast forward
+            historical_features (bool): Return historical features along with the forecast
+
+        Returns:
+            dict: contains features and calclated intrinsic value.
+        """
 
         # pylint: disable=too-many-locals
-        today = date.today()
+        today = datetime.now()
+
+        financials = self.fetch_latest_financials(date=today)
+
         last_filing_date = datetime.strptime(
-            self.financials.year_end_dates[-1], DATE_FORMAT
+            financials.year_end_dates[-1], DATE_FORMAT
         ).date()
 
         response = dict()
@@ -92,35 +154,26 @@ class Stock:
         response["exchange"] = self.exchange
         response["cik"] = self.cik
         response["entity_name"] = self.entity_name
-        response["last_filing_date"] = self.financials.year_end_dates[-1]
-        response["days_since_filiing"] = (today - last_filing_date).days
-        response["number_of_historical_filings"] = len(self.financials.year_end_dates)
+        response["last_filing_date"] = financials.year_end_dates[-1]
+        response["days_since_filiing"] = (today.date() - last_filing_date).days
+        response["number_of_historical_filings"] = len(financials.year_end_dates)
         response["forecast_date"] = today.strftime(DATE_FORMAT)
         response["forecast_horizon"] = number_of_years
 
         # If forecast financials not available generate using last years
-        if not self.forecast_financials:
+        if forecast_financials is None:
 
-            warnings.warn(
-                "No forecast financials provided. Historical financials \
-                    will be used to generate forecasts.",
-                category=UserWarning,
-            )
-
-            if self.financials is None:
-                raise ValueError(
-                    "Fairvalue forecast cannot be made as no forecast financials \
-                        or historical financials have been provided."
-                )
+            # warnings.warn(
+            #     "No forecast financials provided. Historical financials \
+            #         will be used to generate forecasts.",
+            #     category=UserWarning,
+            # )
 
             if self.latest_shares_outstanding == 0:
 
-                warnings.warn(
-                    "FairValue cannot be made as there are no shares outstanding as of the \
-                        last 10-K filing. Returning incomplete fair value calculation.",
-                    category=UserWarning,
+                raise FairValueException(
+                    "Unable to calculate FairValue. Shares outstanding is zero."
                 )
-                return response
 
             fcf = self.financials.free_cashflows[-1]
             g = growth_rate
@@ -148,7 +201,6 @@ class Stock:
             )
 
         else:
-
             forecast_financials = self.forecast_financials
 
         intrinsic_value = calc_intrinsic_value(
@@ -166,7 +218,7 @@ class Stock:
 
         # pylint: enable=too-many-locals
 
-        return RoundedDict(response)._dict
+        return dict(RoundedDict(response)._dict)
 
 
 def calc_historical_features(financials: TickerFinancials = None) -> dict:
@@ -216,6 +268,8 @@ def calc_historical_features(financials: TickerFinancials = None) -> dict:
             else len([x for x in free_cashflows_yoy if x > 0]) / len(free_cashflows_yoy)
         )
 
+    features = dict()
+
     return features
 
 
@@ -263,9 +317,15 @@ def calc_intrinsic_value(
     response["shares_outstanding"] = shares_outstanding
     response["latest_free_cashflow"] = free_cashflows[-1]
     response["company_value"] = company_value
-    response["intrinsic_value"] = np.where(
-        shares_outstanding > 0, company_value / shares_outstanding, np.nan
+
+    intrinsic_value = np.where(
+        shares_outstanding > 0, company_value / shares_outstanding, float("nan")
     )
+
+    if isinstance(intrinsic_value, np.ndarray):
+        intrinsic_value = intrinsic_value.item(0)
+
+    response["intrinsic_value"] = intrinsic_value
 
     return response
 
