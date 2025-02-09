@@ -1,10 +1,11 @@
 import copy
 import json
 import datetime
+from typing import List
 
 import pandas as pd
 
-from fairvalue.models.ingestion import SECFillings, Submissions
+from fairvalue.models.ingestion import SECFillings, Submissions, Datum
 from fairvalue.models.financials import TickerFinancials
 from fairvalue import ParseException
 from fairvalue.constants import (
@@ -175,6 +176,7 @@ def secfiling_to_financials(sec_filing: SECFillings) -> TickerFinancials:
     financials_df[CAPITAL_EXPENDITURE] = financials_df[CAPITAL_EXPENDITURE].astype(
         float
     )
+    financials_df[CAPITAL_EXPENDITURE] = financials_df[CAPITAL_EXPENDITURE].fillna(0.0)
     financials_df[NET_CASHFLOW_OPS] = financials_df[NET_CASHFLOW_OPS].astype(float)
     financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].astype(int)
 
@@ -192,7 +194,7 @@ def secfiling_to_financials(sec_filing: SECFillings) -> TickerFinancials:
     return financials_df
 
 
-def datum_to_dataframe(data, col_name: str) -> pd.DataFrame:
+def datum_to_dataframe(data: List[Datum], col_name: str) -> pd.DataFrame:
     return pd.DataFrame(
         [
             {

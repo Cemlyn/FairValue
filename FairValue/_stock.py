@@ -1,12 +1,15 @@
 import warnings
 
 from typing import List, Dict, Literal, Union, Tuple
-from datetime import (
-    date,
-)
-from datetime import (
-    datetime,
-)
+
+import datetime
+
+# from datetime import (
+#     date,
+# )
+# from datetime import (
+#     datetime,
+# )
 
 import numpy as np
 import pandas as pd
@@ -79,15 +82,25 @@ class Stock:
             raise ValueError(
                 "Unable to fetch latest historical financials. finanicals are 'None'"
             )
+        elif len(self.financials.free_cashflows) == 0:
+            raise FairValueException(
+                "Unable to fetch financials. financials have len zero."
+            )
 
         if date is None:
-            raise ValueError("date must be string of format '%Y-%m-%d'")
+            raise ValueError(
+                "date must be string of format '%Y-%m-%d', or datetime.date object"
+            )
 
         if isinstance(date, str):
-            date = datetime.strptime(date, DATE_FORMAT)
+            date = datetime.datetime.strptime(date, DATE_FORMAT)
+        elif not isinstance(date, datetime.date):
+            raise ValueError(
+                "'date' must be string of format '%Y-%m-%d', or datetime.date object"
+            )
 
         for n, x in enumerate(self.financials.year_end_dates):
-            year_end_date_obj = datetime.strptime(x, DATE_FORMAT)
+            year_end_date_obj = datetime.datetime.strptime(x, DATE_FORMAT)
             if date < year_end_date_obj:
                 if n == 0:
                     raise FairValueException(
@@ -95,24 +108,25 @@ class Stock:
                     )
                 break
 
-        free_cashflows = self.financials.free_cashflows[: n - 1]
-        year_end_dates = self.financials.year_end_dates[: n - 1]
-        shares_outstanding = self.latest_shares_outstanding
+        free_cashflows = self.financials.free_cashflows[:n]
+        year_end_dates = self.financials.year_end_dates[:n]
+        shares_outstanding = [self.latest_shares_outstanding] * (n)
 
         if self.financials.capital_expenditures is not None:
-            capital_expenditures = self.financials.capital_expenditures[: n - 1]
+            capital_expenditures = self.financials.capital_expenditures[:n]
             return TickerFinancials(
-                free_cashflows=Floats(data=free_cashflows),
-                capital_expenditures=NonNegFloats(data=capital_expenditures),
-                year_end_dates=Strs(data=year_end_dates),
-                shares_outstanding=NonNegInts(data=[int(shares_outstanding)] * (n + 1)),
+                free_cashflows=free_cashflows,
+                capital_expenditures=capital_expenditures,
+                year_end_dates=year_end_dates,
+                shares_outstanding=shares_outstanding,
             )
 
+        shares_series = [0.0] * (n)
         return TickerFinancials(
-            free_cashflows=Floats(data=free_cashflows),
-            year_end_dates=Strs(data=year_end_dates),
-            capital_expenditures=NonNegFloats(data=[1.0] * (n - 1)),
-            shares_outstanding=NonNegInts(data=[int(shares_outstanding)] * (n + 1)),
+            free_cashflows=free_cashflows,
+            year_end_dates=year_end_dates,
+            capital_expenditures=shares_series,
+            shares_outstanding=shares_outstanding,
         )
 
     def predict_fairvalue(
@@ -141,11 +155,11 @@ class Stock:
         """
 
         # pylint: disable=too-many-locals
-        today = datetime.now()
+        today = datetime.datetime.now()
 
         financials = self.fetch_latest_financials(date=today)
 
-        last_filing_date = datetime.strptime(
+        last_filing_date = datetime.datetime.strptime(
             financials.year_end_dates[-1], DATE_FORMAT
         ).date()
 
@@ -162,12 +176,6 @@ class Stock:
 
         # If forecast financials not available generate using last years
         if forecast_financials is None:
-
-            # warnings.warn(
-            #     "No forecast financials provided. Historical financials \
-            #         will be used to generate forecasts.",
-            #     category=UserWarning,
-            # )
 
             if self.latest_shares_outstanding == 0:
 
@@ -328,26 +336,3 @@ def calc_intrinsic_value(
     response["intrinsic_value"] = intrinsic_value
 
     return response
-
-
-def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
-
-    company_facts = dict()
-    company_facts["operating_cashflows"] = Floats(
-        data=series_to_list(df.net_cashflow_ops.astype(float))
-    )
-    company_facts["capital_expenditures"] = Floats(
-        data=series_to_list(df.capital_expenditure.astype(float))
-    )
-    company_facts["year_end_dates"] = Strs(data=series_to_list(df["end"]))
-    company_facts["shares_outstanding"] = NonNegInts(
-        data=series_to_list(df.shares_outstanding.astype(int))
-    )
-
-    if "free_cashflows" in df:
-
-        company_facts["free_cashflows"] = Floats(
-            data=series_to_list(df.free_cashflows.astype(float))
-        )
-
-    return company_facts

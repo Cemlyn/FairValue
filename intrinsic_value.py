@@ -11,6 +11,7 @@ import csv
 from typing import Dict, List
 
 import pandas as pd
+from pydantic import ValidationError
 
 from fairvalue import Stock
 from fairvalue.utils import series_to_list
@@ -34,22 +35,16 @@ DIR = "data"
 def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
 
     company_facts = dict()
-    company_facts[NET_CASHFLOW_OPS] = Floats(
-        data=series_to_list(df.net_cashflow_ops.astype(float))
-    )
-    company_facts[CAPITAL_EXPENDITURE] = NonNegFloats(
-        data=series_to_list(df.capital_expenditure.astype(float))
-    )
-    company_facts["year_end_dates"] = Strs(data=series_to_list(df["end"]))
-    company_facts[SHARES_OUTSTANDING] = NonNegInts(
-        data=series_to_list(df.shares_outstanding.astype(int))
-    )
+    company_facts["operating_cashflows"] = df.net_cashflow_ops.astype(float).tolist()
+    company_facts["capital_expenditures"] = df.capital_expenditure.astype(
+        float
+    ).tolist()
+    company_facts["year_end_dates"] = df["end"].tolist()
+    company_facts["shares_outstanding"] = df.shares_outstanding.astype(int).tolist()
 
     if "free_cashflows" in df:
 
-        company_facts["free_cashflows"] = Floats(
-            data=series_to_list(df.free_cashflows.astype(float))
-        )
+        company_facts["free_cashflows"] = df.free_cashflows.astype(float).tolist()
 
     return company_facts
 
@@ -57,7 +52,7 @@ def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
 if __name__ == "__main__":
 
     df = pd.read_json(os.path.join("data", "company_facts.jsonl"), lines=True)
-    df[CAPITAL_EXPENDITURE] = df[CAPITAL_EXPENDITURE].fillna(0)
+    df[CAPITAL_EXPENDITURE] = df[CAPITAL_EXPENDITURE].fillna(0.0)
     df[FREE_CASHFLOW] = df[NET_CASHFLOW_OPS] - df[CAPITAL_EXPENDITURE]
     df["end_parsed"] = pd.to_datetime(df["end"], format=DATE_FORMAT)
     df["filed_parsed"] = pd.to_datetime(df["filed"], format=DATE_FORMAT)
@@ -81,7 +76,11 @@ if __name__ == "__main__":
     stocks = []
     for cik_id, cik_df in df.groupby("cik"):
 
+        count += 1
+
         try:
+            historical_finances = cfacts_df_to_dict(cik_df)
+
             stock = Stock(
                 ticker_id=cik_df.loc[:, "ticker"].iloc[0],
                 exchange=cik_df.loc[:, "exchange"].iloc[0],
@@ -90,7 +89,7 @@ if __name__ == "__main__":
                     :, "latest_shares_outstanding"
                 ].iloc[0],
                 entity_name=cik_df.loc[:, "entityName"].iloc[0],
-                historical_financials=cfacts_df_to_dict(cik_df),
+                historical_financials=historical_finances,
             )
 
             intrinsic_value = stock.predict_fairvalue(
@@ -103,10 +102,8 @@ if __name__ == "__main__":
 
         except FairValueException as e:
             print(f"Skipped!, {e}")
-
-    # import json
-    # with open('test.json','w') as file:
-    #     json.dump(stocks,file)
+        except ValidationError as e:
+            print(f"Skipped!, {e}")
 
     df = pd.DataFrame(stocks)  # .sort_values(by=["last_filing_date"], ascending=False)
     # columns = df.columns.tolist()

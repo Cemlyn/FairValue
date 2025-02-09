@@ -65,12 +65,6 @@ class FinancialMetric(BaseModel):
         return value
 
 
-# class USGaap(BaseModel):
-#     NetCashProvidedByUsedInOperatingActivities: FinancialMetric
-#     PaymentsToAcquirePropertyPlantAndEquipment: Optional[FinancialMetric] = None
-#     model_config = {"extra": "allow"}
-
-
 class USGaap(BaseModel):
     NetCashProvidedByUsedInOperatingActivities: FinancialMetric
     PaymentsToAcquirePropertyPlantAndEquipment: Optional[FinancialMetric] = None
@@ -104,6 +98,20 @@ class Dei(BaseModel):
     EntityPublicFloat: Optional[FinancialMetric] = None
     EntityListingDepositoryReceiptRatio: Optional[FinancialMetric] = None
     model_config = {"extra": "allow"}
+
+    @field_validator("EntityCommonStockSharesOutstanding", mode="after")
+    @classmethod
+    def convert_to_non_negative_int(cls, value):
+        """Ensure this value is always a non-negative float."""
+        if value is not None and isinstance(value, FinancialMetric):
+            for currency, data_list in value.units.items():
+                for datum in data_list:
+                    if datum.val < 0:
+                        raise ValueError("Negative shares outstanding are not allowed.")
+                    datum.val = max(
+                        0, int(datum.val)
+                    )  # Convert to float and enforce non-negativity
+        return value
 
 
 class Facts(BaseModel):

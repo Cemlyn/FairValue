@@ -1,24 +1,24 @@
 """
 Ingestion of Company Facts Script
 
-This script processes SEC bulk companyfacts data, parsnig the json file data into 
-a time ordered sturctured array which can be represented by a pandas dataframe. 
+This script processes SEC bulk companyfacts data, parsnig the json file data into
+a time ordered sturctured array which can be represented by a pandas dataframe.
 
 The script handles the following:
 
 1. Loads submissions data files from a specified directory ('data/submissions').
 2. Loads companyfacts data files from a specified directory ('data/companyfacts').
-3. Passes them to a series of pydantic data models which seperately validates the 
+3. Passes them to a series of pydantic data models which seperately validates the
     structure of the files and then passes them onto a SECfilling pydantic model
     which selects data of interest and saves it to a jsonl files
 
 ### Key Notes:
-- The output is a jsonlines file called 'company_facts.jsonl'. Items in the file can 
+- The output is a jsonlines file called 'company_facts.jsonl'. Items in the file can
     be easily passed to the 'Stock' class to run the discounted cashflow calculation.
 - Is hard coded to only calculate times series on an annualised basis.
 
-Ensure the `data/companyfacts` and `data/submissiosn` directories exist. These can be 
-downloaded from the sec website: http://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip 
+Ensure the `data/companyfacts` and `data/submissiosn` directories exist. These can be
+downloaded from the sec website: http://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip
 """
 
 import os

@@ -1,6 +1,4 @@
-from typing import (
-    Optional,
-)
+from typing import Optional, List
 from datetime import (
     datetime,
 )
@@ -12,6 +10,8 @@ from pydantic import (
     model_validator,
     ValidationError,
     PositiveInt,
+    confloat,
+    conint,
 )
 
 from fairvalue.models.base import (
@@ -28,36 +28,38 @@ from fairvalue.constants import (
     DATE_FORMAT,
 )
 
+NonNegFloat = confloat(ge=0)
+NonNegInt = conint(ge=0)
+
 
 class TickerFinancials(BaseModel):
-    operating_cashflows: Optional[Floats] = Field(
-        None,
-        description="Historic cashflows. Must be floats.",
+    operating_cashflows: Optional[List[float]] = Field(
+        None, description="Historic cashflows. Must be floats."
     )
-    capital_expenditures: Optional[Floats] = Field(
-        None,
-        description="Historic capex. Must be floats.",
+    capital_expenditures: Optional[List[NonNegFloat]] = Field(
+        None, description="Historic capex. Must be non-negative floats."
     )
-    year_end_dates: Strs = Field(
-        ...,
-        description="dates which each of the data points represent",
-    )
-    free_cashflows: Optional[Floats] = Field(
+
+    free_cashflows: Optional[List[float]] = Field(
         None,
         description="Optional. Can be calculated from capex and cashflows",
     )
-    shares_outstanding: NonNegInts = Field(description="Shares outstanding.")
+
+    year_end_dates: List[str] = Field(
+        ...,
+        description="dates which each of the data points represent",
+    )
+
+    shares_outstanding: List[NonNegInt] = Field(description="Shares outstanding.")
 
     @model_validator(mode="before")
     def validate_data(cls, model):
 
         # check that captial expenditure and operating cashflows are provided if free_cashflow isn't
-        if model["free_cashflows"] is None:
-            if model["operating_cashflows"] is None:
-                raise ValueError(
-                    "If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided."
-                )
-            if model["operating_cashflows"] is None:
+        if "free_cashflows" not in model:
+            if ("operating_cashflows" not in model) or (
+                "capital_expenditures" not in model
+            ):
                 raise ValueError(
                     "If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided."
                 )
@@ -95,15 +97,13 @@ class TickerFinancials(BaseModel):
         if model.free_cashflows is None:
             operating_cashflows = model.operating_cashflows
             capital_expenditures = model.capital_expenditures
-            model.free_cashflows = Floats(
-                data=[
-                    ocf - capex
-                    for ocf, capex in zip(
-                        operating_cashflows,
-                        capital_expenditures,
-                    )
-                ]
-            )
+
+            free_cashflows = []
+            for ops_cashflow, capex in zip(operating_cashflows, capital_expenditures):
+                fcf = ops_cashflow - capex
+                free_cashflows.append(fcf)
+
+            model.free_cashflows = free_cashflows
 
         # Reindex for missing years
         missing_years = check_for_missing_dates(model.year_end_dates)
@@ -131,19 +131,13 @@ class TickerFinancials(BaseModel):
             if df["shares_outstanding"].isna().mean():
                 raise ValidationError("shares outstanding contains nans.")
 
-            model.operating_cashflows = Floats(
-                data=series_to_list(df["operating_cashflows"].astype(float))
+            model.operating_cashflows = df["operating_cashflows"].astype(float).tolist()
+            model.capital_expenditures = (
+                df["capital_expenditures"].astype(float).tolist()
             )
-            model.capital_expenditures = Floats(
-                data=series_to_list(df["capital_expenditures"].astype(float))
-            )
-            model.shares_outstanding = NonNegInts(
-                data=series_to_list(df["shares_outstanding"].astype(int))
-            )
-            model.year_end_dates = Strs(data=series_to_list(df["year_end_dates"]))
-            model.free_cashflows = Floats(
-                data=series_to_list(df["free_cashflows"].astype(float))
-            )
+            model.shares_outstanding = df["shares_outstanding"].astype(int).tolist()
+            model.year_end_dates = df["year_end_dates"].tolist()
+            model.free_cashflows = df["free_cashflows"].astype(float).tolist()
 
         return model
 

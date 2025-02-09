@@ -1,5 +1,4 @@
 import os
-import json
 import pytest
 
 from fairvalue.utils import load_json
@@ -10,16 +9,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @pytest.fixture
 def company_facts():
-    return load_json(
-        os.path.join(BASE_DIR, "data", "companyfacts-CIK0000320193.json")
-    )
+    return load_json(os.path.join(BASE_DIR, "data", "companyfacts-CIK0000320193.json"))
 
 
 @pytest.fixture
 def submissions():
-    return load_json(
-        os.path.join(BASE_DIR, "data", "submissions-CIK0000320193.json")
-    )
+    return load_json(os.path.join(BASE_DIR, "data", "submissions-CIK0000320193.json"))
 
 
 def test_sec_filing(company_facts, submissions):
@@ -29,8 +24,7 @@ def test_sec_filing(company_facts, submissions):
     assert sec_filling.companyfacts.entityName == "Apple Inc."
     assert sec_filling.companyfacts.cik == "320193"
 
-    capexes = sec_filling.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units['USD']
+    capexes = sec_filling.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units[
+        "USD"
+    ]
     assert len(capexes) == 90
-
-    #assert all(isinstance(val,float) for val in capexes)
-
