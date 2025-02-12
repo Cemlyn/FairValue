@@ -106,38 +106,38 @@ class TickerFinancials(BaseModel):
             model.free_cashflows = free_cashflows
 
         # Reindex for missing years
-        missing_years = check_for_missing_dates(model.year_end_dates)
+        # missing_years = check_for_missing_dates(model.year_end_dates)
 
-        if len(missing_years):
+        # if len(missing_years):
 
-            filled_dates = fill_dates(model.year_end_dates)
+        #     filled_dates = fill_dates(model.year_end_dates)
 
-            df = pd.DataFrame(
-                {
-                    "operating_cashflows": model.operating_cashflows,
-                    "capital_expenditures": model.capital_expenditures,
-                    "year_end_dates": model.year_end_dates,
-                    "shares_outstanding": model.shares_outstanding,
-                    "free_cashflows": model.free_cashflows,
-                }
-            )
+        #     df = pd.DataFrame(
+        #         {
+        #             "operating_cashflows": model.operating_cashflows,
+        #             "capital_expenditures": model.capital_expenditures,
+        #             "year_end_dates": model.year_end_dates,
+        #             "shares_outstanding": model.shares_outstanding,
+        #             "free_cashflows": model.free_cashflows,
+        #         }
+        #     )
 
-            df = df.set_index("year_end_dates")
-            df = df.reindex(filled_dates).sort_index().reset_index()
+        #     df = df.set_index("year_end_dates")
+        #     df = df.reindex(filled_dates).sort_index().reset_index()
 
-            df["shares_outstanding"] = df["shares_outstanding"].ffill()
-            df["shares_outstanding"] = df["shares_outstanding"].bfill()
+        #     df["shares_outstanding"] = df["shares_outstanding"].ffill()
+        #     df["shares_outstanding"] = df["shares_outstanding"].bfill()
 
-            if df["shares_outstanding"].isna().mean():
-                raise ValidationError("shares outstanding contains nans.")
+        #     if df["shares_outstanding"].isna().mean():
+        #         raise ValidationError("shares outstanding contains nans.")
 
-            model.operating_cashflows = df["operating_cashflows"].astype(float).tolist()
-            model.capital_expenditures = (
-                df["capital_expenditures"].astype(float).tolist()
-            )
-            model.shares_outstanding = df["shares_outstanding"].astype(int).tolist()
-            model.year_end_dates = df["year_end_dates"].tolist()
-            model.free_cashflows = df["free_cashflows"].astype(float).tolist()
+        #     model.operating_cashflows = df["operating_cashflows"].astype(float).tolist()
+        #     model.capital_expenditures = (
+        #         df["capital_expenditures"].astype(float).tolist()
+        #     )
+        #     model.shares_outstanding = df["shares_outstanding"].astype(int).tolist()
+        #     model.year_end_dates = df["year_end_dates"].tolist()
+        #     model.free_cashflows = df["free_cashflows"].astype(float).tolist()
 
         return model
 

@@ -101,27 +101,11 @@ if __name__ == "__main__":
             stocks.append(intrinsic_value)
 
         except FairValueException as e:
-            print(f"Skipped!, {e}")
+            print(f"FairValueException!, {e}")
         except ValidationError as e:
-            print(f"Skipped!, {e}")
+            print(f"ValidationError!, {e}")
 
-    df = pd.DataFrame(stocks)  # .sort_values(by=["last_filing_date"], ascending=False)
-    # columns = df.columns.tolist()
-    # priority_cols = [
-    #     "ticker_id",
-    #     "entity_name",
-    #     "cik",
-    #     "exchange",
-    #     "shares_outstanding",
-    #     "latest_free_cashflow",
-    #     "company_value",
-    #     "intrinsic_value",
-    #     "last_filing_date",
-    # ]
-    # other_cols = [x for x in columns if x not in priority_cols]
-    # df[priority_cols + other_cols].to_csv(
-    #     os.path.join(DIR, "intrinsic_value.csv"), index=False, quoting=csv.QUOTE_MINIMAL
-    # )
+    df = pd.DataFrame(stocks)
     df.to_csv(
         os.path.join(DIR, "intrinsic_value.csv"), index=False, quoting=csv.QUOTE_MINIMAL
     )

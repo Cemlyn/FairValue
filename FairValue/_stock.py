@@ -99,18 +99,14 @@ class Stock:
                 "'date' must be string of format '%Y-%m-%d', or datetime.date object"
             )
 
-        for n, x in enumerate(self.financials.year_end_dates):
-            year_end_date_obj = datetime.datetime.strptime(x, DATE_FORMAT)
-            if date < year_end_date_obj:
-                if n == 0:
-                    raise FairValueException(
-                        f"Unable to retrieve financials before the date '{date}'"
-                    )
-                break
+        n = latest_index(date, self.financials.year_end_dates)
 
         free_cashflows = self.financials.free_cashflows[:n]
         year_end_dates = self.financials.year_end_dates[:n]
         shares_outstanding = [self.latest_shares_outstanding] * (n)
+
+        if len(free_cashflows) == 0:
+            raise ValueError(f"cemlyn error, date: {date}")
 
         if self.financials.capital_expenditures is not None:
             capital_expenditures = self.financials.capital_expenditures[:n]
@@ -227,6 +223,25 @@ class Stock:
         # pylint: enable=too-many-locals
 
         return dict(RoundedDict(response)._dict)
+
+
+def latest_index(date: datetime.datetime, year_end_dates: List[str]):
+
+    l = len(year_end_dates) - 1
+
+    for n, x in enumerate(year_end_dates):
+
+        year_end_date_obj = datetime.datetime.strptime(x, DATE_FORMAT)
+
+        if date < year_end_date_obj:
+
+            if n == 0:
+                raise FairValueException(
+                    f"Unable to retrieve financials before the date '{date}'"
+                )
+            return n
+
+    return n + 1
 
 
 def calc_historical_features(financials: TickerFinancials = None) -> dict:
