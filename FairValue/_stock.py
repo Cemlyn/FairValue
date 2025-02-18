@@ -1,21 +1,10 @@
-import warnings
-
-from typing import List, Dict, Literal, Union, Tuple
-
 import datetime
-
-# from datetime import (
-#     date,
-# )
-# from datetime import (
-#     datetime,
-# )
+from typing import List, Dict, Literal, Union, Tuple
 
 import numpy as np
 import pandas as pd
 
 from fairvalue.utils import (
-    series_to_list,
     generate_future_dates,
     RoundedDict,
     drop_nans,
@@ -24,20 +13,43 @@ from fairvalue.models.financials import (
     TickerFinancials,
     ForecastTickerFinancials,
 )
-from fairvalue.models.base import Floats, Strs, NonNegInts, NonNegFloats
-
-from fairvalue.models.utils import validate_date
+from fairvalue.models.base import Floats, Strs
 
 from fairvalue._calculations import (
     daily_trend,
 )
 
+
+from fairvalue._ingestion import secfiling_to_financials
+
 from fairvalue.constants import (
+    CAPITAL_EXPENDITURE,
+    NET_CASHFLOW_OPS,
+    FREE_CASHFLOW,
     DATE_FORMAT,
     MEAN_DAYS_IN_YEAR,
+    SHARES_OUTSTANDING,
 )
 
 from fairvalue._exceptions import FairValueException
+from fairvalue.models.ingestion import SECFilingsModel
+
+
+def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
+
+    company_facts = dict()
+    company_facts["operating_cashflows"] = df.net_cashflow_ops.astype(float).tolist()
+    company_facts["capital_expenditures"] = df.capital_expenditure.astype(
+        float
+    ).tolist()
+    company_facts["year_end_dates"] = df["end"].tolist()
+    company_facts["shares_outstanding"] = df.shares_outstanding.astype(int).tolist()
+
+    if "free_cashflows" in df:
+
+        company_facts["free_cashflows"] = df.free_cashflows.astype(float).tolist()
+
+    return company_facts
 
 
 class Stock:
@@ -50,6 +62,7 @@ class Stock:
         latest_shares_outstanding: Union[int, None] = None,
         entity_name: str = None,
         historical_financials: dict = None,
+        sec_filing: SECFilingsModel = None,
     ):
         """
         Initialize the CompanyFinancials class with a DataFrame.
@@ -63,16 +76,69 @@ class Stock:
         self.cik = cik
         self.entity_name = entity_name
 
-        if latest_shares_outstanding is None:
+        if (
+            (latest_shares_outstanding is None)
+            and (historical_financials is None)
+            and (sec_filing is None)
+        ):
             raise FairValueException(
-                "FairValue does not support tickers with zero shares outstanding."
+                "latest_shares_outstanding, or historical_financials or sec_filing must be provided."
             )
-        self.latest_shares_outstanding = latest_shares_outstanding
 
         if historical_financials:
             self.financials = TickerFinancials(**historical_financials)
+
+        elif sec_filing:
+
+            ticker_dict = dict(
+                zip(sec_filing.submissions.tickers, sec_filing.submissions.exchanges)
+            )
+            shortest_key = min(ticker_dict, key=len)
+
+            if self.ticker_id is None:
+                self.ticker_id = shortest_key
+
+            if self.exchange is None:
+                self.exchange = ticker_dict[shortest_key]
+
+            if self.entity_name is None:
+                self.entity_name = sec_filing.companyfacts.entityName
+
+            if self.cik is None:
+                self.cik = sec_filing.companyfacts.cik
+
+            financials_df = secfiling_to_financials(sec_filing=sec_filing)
+            financials_df[CAPITAL_EXPENDITURE] = financials_df[
+                CAPITAL_EXPENDITURE
+            ].fillna(0.0)
+            financials_df[FREE_CASHFLOW] = (
+                financials_df[NET_CASHFLOW_OPS] - financials_df[CAPITAL_EXPENDITURE]
+            )
+            financials_df["end_parsed"] = pd.to_datetime(
+                financials_df["end"], format=DATE_FORMAT
+            )
+            financials_df["filed_parsed"] = pd.to_datetime(
+                financials_df["filed"], format=DATE_FORMAT
+            )
+            financials_df["end_year"] = financials_df["end_parsed"].dt.year
+            financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].abs()
+            financials_df = financials_df[
+                financials_df["form"].isin(["10-K", "20-F", "20-F/A", "10-K/A"])
+            ]
+            financials_df = financials_df.drop_duplicates(
+                subset=["cik", "end_parsed", "filed_parsed"], keep="last"
+            )
+            financials_df = financials_df.drop_duplicates(
+                subset=["cik", "end_year"], keep="last"
+            )
+            self.financials = TickerFinancials(**cfacts_df_to_dict(financials_df))
         else:
             self.financials = None
+
+        if latest_shares_outstanding is None:
+            self.latest_shares_outstanding = self.financials.shares_outstanding[-1]
+        else:
+            self.latest_shares_outstanding = latest_shares_outstanding
 
     def fetch_latest_financials(
         self, date: Union[str, datetime.date] = None
@@ -128,11 +194,12 @@ class Stock:
     def predict_fairvalue(
         self,
         growth_rate: float = 0.00,
-        growth_decay_rate: float = 0.01,
+        growth_decay_rate: float = 0.00,
         discounting_rate: float = 0.05,
         number_of_years: int = 10,
         historical_features: bool = True,
         forecast_financials: ForecastTickerFinancials = None,
+        forecast_date:str = None,
     ) -> dict:
         """
         Generate a quick fairvalue estimate using the latest financials for a company, projecting
@@ -151,9 +218,13 @@ class Stock:
         """
 
         # pylint: disable=too-many-locals
-        today = datetime.datetime.now()
+        if forecast_date is None:
+            forecast_date = datetime.datetime.now()
+        else:
+            forecast_date = datetime.datetime.strptime(forecast_date,DATE_FORMAT)
 
-        financials = self.fetch_latest_financials(date=today)
+
+        financials = self.fetch_latest_financials(date=forecast_date)
 
         last_filing_date = datetime.datetime.strptime(
             financials.year_end_dates[-1], DATE_FORMAT
@@ -165,9 +236,9 @@ class Stock:
         response["cik"] = self.cik
         response["entity_name"] = self.entity_name
         response["last_filing_date"] = financials.year_end_dates[-1]
-        response["days_since_filiing"] = (today.date() - last_filing_date).days
+        response["days_since_filiing"] = (forecast_date.date() - last_filing_date).days
         response["number_of_historical_filings"] = len(financials.year_end_dates)
-        response["forecast_date"] = today.strftime(DATE_FORMAT)
+        response["forecast_date"] = forecast_date.strftime(DATE_FORMAT)
         response["forecast_horizon"] = number_of_years
 
         # If forecast financials not available generate using last years
@@ -213,6 +284,13 @@ class Stock:
             terminal_growth=forecast_financials.terminal_growth,
             shares_outstanding=forecast_financials.shares_outstanding,
         )
+
+        intrinsic_value["latest_company_value"] = intrinsic_value["company_value"]
+        del intrinsic_value["company_value"]
+
+        intrinsic_value["latest_intrinsic_value"] = intrinsic_value["intrinsic_value"]
+        del intrinsic_value["intrinsic_value"]
+
         response.update(intrinsic_value)
 
         # calculate features
@@ -226,8 +304,6 @@ class Stock:
 
 
 def latest_index(date: datetime.datetime, year_end_dates: List[str]):
-
-    l = len(year_end_dates) - 1
 
     for n, x in enumerate(year_end_dates):
 
@@ -338,7 +414,6 @@ def calc_intrinsic_value(
 
     response = {}
     response["shares_outstanding"] = shares_outstanding
-    response["latest_free_cashflow"] = free_cashflows[-1]
     response["company_value"] = company_value
 
     intrinsic_value = np.where(

@@ -14,8 +14,6 @@ import pandas as pd
 from pydantic import ValidationError
 
 from fairvalue import Stock
-from fairvalue.utils import series_to_list
-from fairvalue.models.base import Floats, Strs, NonNegInts, NonNegFloats
 from fairvalue.constants import (
     DATE_FORMAT,
     CAPITAL_EXPENDITURE,
@@ -101,9 +99,9 @@ if __name__ == "__main__":
             stocks.append(intrinsic_value)
 
         except FairValueException as e:
-            print(f"FairValueException!, {e}")
+            print(f"FairValueException, {e}")
         except ValidationError as e:
-            print(f"ValidationError!, {e}")
+            print(f"ValidationError, {e}")
 
     df = pd.DataFrame(stocks)
     df.to_csv(

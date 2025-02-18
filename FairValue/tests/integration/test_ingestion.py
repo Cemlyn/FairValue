@@ -2,7 +2,7 @@ import os
 import pytest
 
 from fairvalue.utils import load_json
-from fairvalue.models.ingestion import SECFillings
+from fairvalue.models.ingestion import SECFilings
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,7 +19,7 @@ def submissions():
 
 def test_sec_filing(company_facts, submissions):
 
-    sec_filling = SECFillings(companyfacts=company_facts, submissions=submissions)
+    sec_filling = SECFilings(companyfacts=company_facts, submissions=submissions)
 
     assert sec_filling.companyfacts.entityName == "Apple Inc."
     assert sec_filling.companyfacts.cik == "320193"

@@ -261,6 +261,43 @@ class CompanyFacts(BaseModel):
         return str(value)
 
 
-class SECFillings(BaseModel):
+class SECFilingsModel(BaseModel):
     companyfacts: CompanyFacts
     submissions: Submissions
+
+
+class SECFilings:
+
+    def __init__(
+        self,
+        companyfacts: Union[CompanyFacts, str],
+        submissions: Union[Submissions, str],
+    ):
+
+        if isinstance(companyfacts, str) or isinstance(submissions, str):
+
+            if not (isinstance(companyfacts, str) and isinstance(submissions, str)):
+                raise ValueError(
+                    "Both companyfacts and submissions args must be str if either is str."
+                )
+
+            with open(companyfacts, encoding="utf-8", mode="r") as file:
+                companyfacts_json = json.load(file)
+
+            with open(submissions, encoding="utf-8", mode="r") as file:
+                submissions_json = json.load(file)
+
+            companyfacts = CompanyFacts(**companyfacts_json)
+            submissions = Submissions(**submissions_json)
+
+        self._instance = SECFilingsModel(
+            companyfacts=companyfacts, submissions=submissions
+        )
+
+    def __getattr__(self, name):
+        """Redirects attribute access to the TargetModel instance."""
+        return getattr(self._instance, name)
+
+    def __repr__(self):
+        """Returns the string representation of the TargetModel instance."""
+        return repr(self._instance)

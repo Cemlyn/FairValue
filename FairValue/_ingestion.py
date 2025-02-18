@@ -1,13 +1,13 @@
 import copy
 import json
 import datetime
-from typing import List
+from typing import List, Dict
 
 import pandas as pd
 
-from fairvalue.models.ingestion import SECFillings, Submissions, Datum
+from fairvalue.models.ingestion import SECFilings, Submissions, Datum
 from fairvalue.models.financials import TickerFinancials
-from fairvalue import ParseException
+from fairvalue._exceptions import ParseException
 from fairvalue.constants import (
     DATE_FORMAT,
     NET_CASHFLOW_OPS,
@@ -26,7 +26,7 @@ def fetch_state_dict():
 state_dict = fetch_state_dict()
 
 
-def check_for_foreign_currencies(sec_filing: SECFillings) -> bool:
+def check_for_foreign_currencies(sec_filing: SECFilings) -> bool:
 
     if (
         "USD"
@@ -62,7 +62,7 @@ def check_for_foreign_currencies(sec_filing: SECFillings) -> bool:
     return False
 
 
-def secfiling_to_financials(sec_filing: SECFillings) -> TickerFinancials:
+def secfiling_to_financials(sec_filing: SECFilings) -> TickerFinancials:
 
     is_foreign = (
         not state_dict[sec_filing.submissions.stateOfIncorporationDescription]

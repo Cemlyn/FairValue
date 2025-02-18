@@ -90,7 +90,7 @@ def main(csv_file):
                     "n": None,
                 }
 
-            time.sleep(0.05)
+            time.sleep(0.02)
 
         json_line = json.dumps(price)
 

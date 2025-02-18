@@ -24,3 +24,5 @@ def test_stock():
         entity_name="test corp",
         historical_financials=historical_finances,
     )
+
+    stock.predict_fairvalue()
