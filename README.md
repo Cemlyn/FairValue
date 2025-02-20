@@ -1,3 +1,5 @@
+![Test Status](https://github.com/Cemlyn/FairValue/actions/workflows/test.yml/badge.svg)
+
 # FairValue
 
 FairValue is a python tool used to:
