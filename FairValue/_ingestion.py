@@ -14,6 +14,7 @@ from fairvalue.constants import (
     CAPITAL_EXPENDITURE,
     SHARES_OUTSTANDING,
     STATE_OF_INCORP_DICT,
+    FREE_CASHFLOW,
 )
 
 
@@ -24,6 +25,23 @@ def fetch_state_dict():
 
 
 state_dict = fetch_state_dict()
+
+
+def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
+
+    company_facts = dict()
+    company_facts["operating_cashflows"] = df.net_cashflow_ops.astype(float).tolist()
+    company_facts["capital_expenditures"] = df.capital_expenditure.astype(
+        float
+    ).tolist()
+    company_facts["year_end_dates"] = df["end"].tolist()
+    company_facts["shares_outstanding"] = df.shares_outstanding.astype(int).tolist()
+
+    if "free_cashflows" in df:
+
+        company_facts["free_cashflows"] = df.free_cashflows.astype(float).tolist()
+
+    return company_facts
 
 
 def check_for_foreign_currencies(sec_filing: SECFilings) -> bool:
@@ -192,6 +210,35 @@ def secfiling_to_financials(sec_filing: SECFilings) -> TickerFinancials:
     )
 
     return financials_df
+
+
+def secfiling_to_annual_financials(sec_filing: SECFilings) -> TickerFinancials:
+
+    financials_df = secfiling_to_financials(sec_filing=sec_filing)
+    financials_df[CAPITAL_EXPENDITURE] = financials_df[CAPITAL_EXPENDITURE].fillna(0.0)
+    financials_df[FREE_CASHFLOW] = (
+        financials_df[NET_CASHFLOW_OPS] - financials_df[CAPITAL_EXPENDITURE]
+    )
+    financials_df["end_parsed"] = pd.to_datetime(
+        financials_df["end"], format=DATE_FORMAT
+    )
+    financials_df["filed_parsed"] = pd.to_datetime(
+        financials_df["filed"], format=DATE_FORMAT
+    )
+    financials_df["end_year"] = financials_df["end_parsed"].dt.year
+    financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].abs()
+    financials_df = financials_df[
+        financials_df["form"].isin(["10-K", "20-F", "20-F/A", "10-K/A"])
+    ]
+    financials_df = financials_df.drop_duplicates(
+        subset=["cik", "end_parsed", "filed_parsed"], keep="last"
+    )
+    financials_df = financials_df.drop_duplicates(
+        subset=["cik", "end_year"], keep="last"
+    )
+    financials = TickerFinancials(**cfacts_df_to_dict(financials_df))
+
+    return financials
 
 
 def datum_to_dataframe(data: List[Datum], col_name: str) -> pd.DataFrame:

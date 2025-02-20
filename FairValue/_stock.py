@@ -1,3 +1,4 @@
+import math
 import datetime
 from typing import List, Dict, Literal, Union, Tuple
 
@@ -20,36 +21,19 @@ from fairvalue._calculations import (
 )
 
 
-from fairvalue._ingestion import secfiling_to_financials
+from fairvalue._ingestion import secfiling_to_annual_financials
 
 from fairvalue.constants import (
     CAPITAL_EXPENDITURE,
     NET_CASHFLOW_OPS,
     FREE_CASHFLOW,
     DATE_FORMAT,
-    MEAN_DAYS_IN_YEAR,
     SHARES_OUTSTANDING,
 )
 
 from fairvalue._exceptions import FairValueException
 from fairvalue.models.ingestion import SECFilingsModel
-
-
-def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
-
-    company_facts = dict()
-    company_facts["operating_cashflows"] = df.net_cashflow_ops.astype(float).tolist()
-    company_facts["capital_expenditures"] = df.capital_expenditure.astype(
-        float
-    ).tolist()
-    company_facts["year_end_dates"] = df["end"].tolist()
-    company_facts["shares_outstanding"] = df.shares_outstanding.astype(int).tolist()
-
-    if "free_cashflows" in df:
-
-        company_facts["free_cashflows"] = df.free_cashflows.astype(float).tolist()
-
-    return company_facts
+from fairvalue import utils
 
 
 class Stock:
@@ -107,31 +91,8 @@ class Stock:
             if self.cik is None:
                 self.cik = sec_filing.companyfacts.cik
 
-            financials_df = secfiling_to_financials(sec_filing=sec_filing)
-            financials_df[CAPITAL_EXPENDITURE] = financials_df[
-                CAPITAL_EXPENDITURE
-            ].fillna(0.0)
-            financials_df[FREE_CASHFLOW] = (
-                financials_df[NET_CASHFLOW_OPS] - financials_df[CAPITAL_EXPENDITURE]
-            )
-            financials_df["end_parsed"] = pd.to_datetime(
-                financials_df["end"], format=DATE_FORMAT
-            )
-            financials_df["filed_parsed"] = pd.to_datetime(
-                financials_df["filed"], format=DATE_FORMAT
-            )
-            financials_df["end_year"] = financials_df["end_parsed"].dt.year
-            financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].abs()
-            financials_df = financials_df[
-                financials_df["form"].isin(["10-K", "20-F", "20-F/A", "10-K/A"])
-            ]
-            financials_df = financials_df.drop_duplicates(
-                subset=["cik", "end_parsed", "filed_parsed"], keep="last"
-            )
-            financials_df = financials_df.drop_duplicates(
-                subset=["cik", "end_year"], keep="last"
-            )
-            self.financials = TickerFinancials(**cfacts_df_to_dict(financials_df))
+            self.financials = secfiling_to_annual_financials(sec_filing=sec_filing)
+
         else:
             self.financials = None
 
@@ -199,7 +160,7 @@ class Stock:
         number_of_years: int = 10,
         historical_features: bool = True,
         forecast_financials: ForecastTickerFinancials = None,
-        forecast_date:str = None,
+        forecast_date: str = None,
     ) -> dict:
         """
         Generate a quick fairvalue estimate using the latest financials for a company, projecting
@@ -221,8 +182,7 @@ class Stock:
         if forecast_date is None:
             forecast_date = datetime.datetime.now()
         else:
-            forecast_date = datetime.datetime.strptime(forecast_date,DATE_FORMAT)
-
+            forecast_date = datetime.datetime.strptime(forecast_date, DATE_FORMAT)
 
         financials = self.fetch_latest_financials(date=forecast_date)
 
@@ -237,7 +197,7 @@ class Stock:
         response["entity_name"] = self.entity_name
         response["last_filing_date"] = financials.year_end_dates[-1]
         response["days_since_filiing"] = (forecast_date.date() - last_filing_date).days
-        response["number_of_historical_filings"] = len(financials.year_end_dates)
+        response["count_filings"] = len(financials.year_end_dates)
         response["forecast_date"] = forecast_date.strftime(DATE_FORMAT)
         response["forecast_horizon"] = number_of_years
 
@@ -285,18 +245,51 @@ class Stock:
             shares_outstanding=forecast_financials.shares_outstanding,
         )
 
-        intrinsic_value["latest_company_value"] = intrinsic_value["company_value"]
-        del intrinsic_value["company_value"]
-
-        intrinsic_value["latest_intrinsic_value"] = intrinsic_value["intrinsic_value"]
-        del intrinsic_value["intrinsic_value"]
-
         response.update(intrinsic_value)
 
         # calculate features
         if historical_features and self.financials is not None:
             features = calc_historical_features(self.financials)
             response.update(features)
+
+            # response.update(features)
+
+            # # rerun intrinsic value calc with historical growth
+            # if 'mean_freecashflow_growth' in features:
+            #     fcf = self.financials.free_cashflows[-1]
+            #     g = 1 + features['mean_freecashflow_growth']
+
+            #     free_cashflows = []
+
+            #     for _ in range(number_of_years):
+            #         fcf = fcf * (1 + g) / (1 + discounting_rate)
+            #         g = g * (1 - growth_decay_rate)
+            #         free_cashflows.append(fcf)
+
+            #     free_cashflows = Floats(data=free_cashflows)
+            #     discount_rates = Floats(
+            #         data=[discounting_rate for _ in range(number_of_years)]
+            #     )
+            #     # shares_outstanding = self.latest_shares_outstanding
+            #     year_end_dates = Strs(data=generate_future_dates(n=number_of_years))
+
+            #     forecast_financials = ForecastTickerFinancials(
+            #         year_end_dates=year_end_dates,
+            #         free_cashflows=free_cashflows,
+            #         discount_rates=discount_rates,
+            #         shares_outstanding=self.latest_shares_outstanding,
+            #         terminal_growth=g * (1 - growth_decay_rate),
+            #     )
+
+            #     intrinsic_value = calc_intrinsic_value(
+            #         free_cashflows=forecast_financials.free_cashflows,
+            #         discount=forecast_financials.discount_rates,
+            #         terminal_growth=forecast_financials.terminal_growth,
+            #         shares_outstanding=forecast_financials.shares_outstanding,
+            #     )
+
+            #     response['mean_freecashflow_growth'] = features['mean_freecashflow_growth']
+            #     response['projected_intrinsic_value'] = intrinsic_value['intrinsic_value']
 
         # pylint: enable=too-many-locals
 
@@ -324,50 +317,81 @@ def calc_historical_features(financials: TickerFinancials = None) -> dict:
 
     features = dict()
 
+    # check coverage
+    missing_dates = utils.check_for_missing_dates(financials.year_end_dates)
+
+    if missing_dates:
+        return features
+
+    # # Need at least 4 years of financials
+    if len(financials.year_end_dates) < 4:
+        return features
+
+    # Auto correlation of freecashflows - used as a measure for stability
+    features["fcf_autocorrelation"] = np.corrcoef(
+        financials.free_cashflows[:-1], financials.free_cashflows[1:]
+    )[0, 1]
+
+    growth = [
+        t1 / (t0 + 1) - 1
+        for t0, t1 in zip(financials.free_cashflows[:-1], financials.free_cashflows[1:])
+    ]
+    features["median_fcf_growth_all"] = np.median(growth)
+
+    growth = [
+        t1 / (t0 + 1) - 1
+        for t0, t1 in zip(
+            financials.free_cashflows[-4:-1], financials.free_cashflows[-3:]
+        )
+    ]
+    features["median_fcf_growth_l4y"] = np.median(growth)
+
+    # print(financials.free_cashflows,growth,len(financials.year_end_dates),arithmetic_mean)
+
+    # features['mean_freecashflow_growth'] = geo_mean - 1
+
     # Free Cashflow trends
-    dates, fc_flows = drop_nans(financials.year_end_dates, financials.free_cashflows)
+    # dates, fc_flows = drop_nans(financials.year_end_dates, financials.free_cashflows)
 
     # free cashflow features which looks at trends in the financials
-    features["free_cashflow_yoy_amt"] = (
-        np.nan if len(fc_flows) < 2 else (fc_flows[-1] - fc_flows[-2])
-    )
-    features["free_cashflow_yoy_pct"] = (
-        np.nan
-        if (len(fc_flows) < 2) or (fc_flows[-2] == 0)
-        else (fc_flows[-1] / fc_flows[-2] - 1)
-    )
+    # features["free_cashflow_yoy_amt"] = (
+    #     np.nan if len(fc_flows) < 2 else (fc_flows[-1] - fc_flows[-2])
+    # )
+    # features["free_cashflow_yoy_pct"] = (
+    #     np.nan
+    #     if (len(fc_flows) < 2) or (fc_flows[-2] == 0)
+    #     else (fc_flows[-1] / fc_flows[-2] - 1)
+    # )
 
-    # last 3, 5, 10 years
-    for n in [3, 5, 10]:
-        fc_flows_slice = fc_flows[:n]
-        dates_slice = dates[:n]
-        features[f"free_cashflow_range_L{n}yrs"] = max(fc_flows_slice) - min(
-            fc_flows_slice
-        )
-        features[f"free_cashflow_trend_L{n}yrs"], _, _, residuals = daily_trend(
-            dates_slice, fc_flows_slice
-        )
-        features[f"free_cashflow_trend_L{n}yrs"] = (
-            features[f"free_cashflow_trend_L{n}yrs"] * MEAN_DAYS_IN_YEAR
-        )
-        features[f"free_cashflow_detrended_range_L{n}yrs"] = max(residuals) - min(
-            residuals
-        )
-        features[f"free_cashflow_detrended_std_L{n}yrs"] = np.std(residuals)
-        features[f"free_cashflow_perc_gt_zero_L{n}yrs"] = len(
-            [x for x in fc_flows_slice if x > 0]
-        ) / len(fc_flows_slice)
+    # # last 3, 5, 10 years
+    # for n in [3, 5, 10]:
+    #     fc_flows_slice = fc_flows[:n]
+    #     dates_slice = dates[:n]
+    #     features[f"free_cashflow_range_L{n}yrs"] = max(fc_flows_slice) - min(
+    #         fc_flows_slice
+    #     )
+    #     features[f"free_cashflow_trend_L{n}yrs"], _, _, residuals = daily_trend(
+    #         dates_slice, fc_flows_slice
+    #     )
+    #     features[f"free_cashflow_trend_L{n}yrs"] = (
+    #         features[f"free_cashflow_trend_L{n}yrs"] * MEAN_DAYS_IN_YEAR
+    #     )
+    #     features[f"free_cashflow_detrended_range_L{n}yrs"] = max(residuals) - min(
+    #         residuals
+    #     )
+    #     features[f"free_cashflow_detrended_std_L{n}yrs"] = np.std(residuals)
+    #     features[f"free_cashflow_perc_gt_zero_L{n}yrs"] = len(
+    #         [x for x in fc_flows_slice if x > 0]
+    #     ) / len(fc_flows_slice)
 
-        free_cashflows_yoy = [
-            b - a for a, b in zip(fc_flows_slice[:-1], fc_flows_slice[1:])
-        ]
-        features[f"free_cashflow_perc_non_zero_growth_L{n}yrs"] = (
-            np.nan
-            if len(free_cashflows_yoy) == 0
-            else len([x for x in free_cashflows_yoy if x > 0]) / len(free_cashflows_yoy)
-        )
-
-    features = dict()
+    #     free_cashflows_yoy = [
+    #         b - a for a, b in zip(fc_flows_slice[:-1], fc_flows_slice[1:])
+    #     ]
+    #     features[f"free_cashflow_perc_non_zero_growth_L{n}yrs"] = (
+    #         np.nan
+    #         if len(free_cashflows_yoy) == 0
+    #         else len([x for x in free_cashflows_yoy if x > 0]) / len(free_cashflows_yoy)
+    #     )
 
     return features
 

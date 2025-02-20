@@ -1,9 +1,6 @@
-import pytest
-
 import pandas as pd
-from pydantic import ValidationError
 
-from fairvalue._ingestion import datum_to_dataframe, secfiling_to_financials
+from fairvalue._ingestion import datum_to_dataframe
 from fairvalue.models.ingestion import Datum
 
 

@@ -95,6 +95,7 @@ if __name__ == "__main__":
                 growth_decay_rate=0.01,
                 discounting_rate=0.05,
                 number_of_years=10,
+                historical_features=True,
             )
             stocks.append(intrinsic_value)
 

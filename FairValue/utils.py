@@ -98,26 +98,23 @@ def generate_future_dates(n: int) -> List[str]:
 
 def check_for_missing_dates(date_strings: List[str]) -> List[int]:
 
-    # Convert strings to datetime objects
+    if not date_strings:
+        return []  # Return an empty list if there are no dates
+
+    DATE_FORMAT = "%Y-%m-%d"  # Ensure date format is defined
     dates = [datetime.strptime(date, DATE_FORMAT) for date in date_strings]
 
-    # Find the minimum and maximum dates
-    min_date = min(dates)
-    max_date = max(dates)
+    min_year = min(dates).year
+    max_year = max(dates).year
 
-    # Generate a list of dates spanning from min_date to max_date with yearly intervals
-    dts = [min_date]
-    while dts[-1] < max_date:
-        dts.append(dts[-1] + relativedelta(years=1))  # Approximation for a year
+    # Generate full range of years
+    all_years = set(range(min_year, max_year + 1))
+    present_years = {date.year for date in dates}
 
-    # Extract years from the original dates and the generated date range
-    years = {date.year for date in dates}
-    dts_years = {date.year for date in dts}
+    # Find missing years
+    missing_years = sorted(all_years - present_years)
 
-    # Find the missing years
-    missing_years = dts_years - years
-
-    return list(missing_years)
+    return missing_years
 
 
 class RoundedDict:

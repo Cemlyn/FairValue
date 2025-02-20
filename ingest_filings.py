@@ -1,8 +1,8 @@
 """
-Ingestion of Company Facts Script
+Ingestion of Company Facts and Submissions bulk data files.
 
-This script processes SEC bulk companyfacts data, parsnig the json file data into
-a time ordered sturctured array which can be represented by a pandas dataframe.
+This script parse the bulk json file data into a time ordered sturctured array
+which can be represented by a pandas dataframe.
 
 The script handles the following:
 
@@ -28,7 +28,7 @@ from pydantic import ValidationError
 
 from fairvalue.utils import load_json
 from fairvalue import secfiling_to_financials, ParseException
-from fairvalue.models.ingestion import CompanyFacts, Submissions, SECFillings
+from fairvalue.models.ingestion import CompanyFacts, Submissions, SECFilings
 
 from logger_conf import get_logger
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
             submissions_json = load_json(os.path.join(DIR, SUBMISSIONS, file))
             submission = Submissions(**submissions_json)
 
-            secfilling = SECFillings(companyfacts=companyfacts, submissions=submission)
+            secfilling = SECFilings(companyfacts=companyfacts, submissions=submission)
 
             logger.info(f"Sucessfully processed file '%s'", file)
 

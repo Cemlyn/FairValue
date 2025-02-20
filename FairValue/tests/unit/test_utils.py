@@ -79,3 +79,11 @@ def test_for_leap_years():
         2011,
     ]
     assert len(missing_dates) == 2
+
+    # leap year example with missing data
+    dates = ["2018-01-01", "2020-02-01", "2021-02-01", "2022-02-01"]
+    missing_dates = check_for_missing_dates(dates)
+    assert missing_dates == [
+        2019,
+    ]
+    assert len(missing_dates) == 1

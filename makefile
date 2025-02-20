@@ -15,9 +15,13 @@ install: venv # Install dependencies
 process-data: # Process the data
 	$(PYTHON) process_company_facts.py
 
-.PHONY: test
-test: # run unit tests
-	pytest
+.PHONY: unit-test
+unit-test: # run unit tests
+	pytest fairvalue/tests/unit
+
+.PHONY: integration-test
+integration-test: # run unit tests
+	pytest fairvalue/tests/integration
 
 .PHONY: fmt
 fmt:
