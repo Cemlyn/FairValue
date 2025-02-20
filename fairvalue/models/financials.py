@@ -33,6 +33,7 @@ NonNegInt = conint(ge=0)
 
 
 class TickerFinancials(BaseModel):
+
     operating_cashflows: Optional[List[float]] = Field(
         None, description="Historic cashflows. Must be floats."
     )

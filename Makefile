@@ -20,7 +20,12 @@ unit-test: # run unit tests
 	pytest fairvalue/tests/unit
 
 .PHONY: integration-test
-integration-test: # run unit tests
+integration-test: # run integration tests
+	pytest fairvalue/tests/integration
+
+.PHONY: test
+test: # run unit tests
+	pytest fairvalue/tests/unit
 	pytest fairvalue/tests/integration
 
 .PHONY: fmt

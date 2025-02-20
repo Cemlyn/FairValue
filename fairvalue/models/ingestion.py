@@ -7,7 +7,7 @@ import pandas as pd
 
 from pydantic import BaseModel, Field, field_validator
 from fairvalue.models.utils import validate_date
-from fairvalue.constants import STATE_OF_INCORP_DICT
+from fairvalue.constants import STATE_OF_INCORP_DICT, DATE_FORMAT
 
 
 def fetch_state_dict():
@@ -119,6 +119,39 @@ class Facts(BaseModel):
     us_gaap: USGaap = Field(alias="us-gaap")
 
 
+class RecentFilings(BaseModel):
+    filingDate: List[str] = Field(
+        ..., description="List of filing dates in YYYY-MM-DD format"
+    )
+
+    @field_validator("filingDate", mode="before")
+    def validate_date_format(cls, values):
+        """Ensures that all dates in the list are in YYYY-MM-DD format."""
+        if not isinstance(values, list):
+            raise TypeError(
+                f"Expected a list of dates, but got {type(values).__name__}"
+            )
+
+        for date in values:
+            if not isinstance(date, str):
+                raise TypeError(
+                    f"Expected a string for date, but got {type(date).__name__}: {date}"
+                )
+
+            try:
+                datetime.strptime(date, DATE_FORMAT)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid date format: {date}. Expected format: YYYY-MM-DD"
+                )
+
+        return values  # Return the validated list
+
+
+class Filings(BaseModel):
+    recent: RecentFilings
+
+
 class Submissions(BaseModel):
     cik: Union[str, int]
     entityType: Optional[str] = None
@@ -127,6 +160,7 @@ class Submissions(BaseModel):
     name: Optional[str] = None
     tickers: List[str]
     exchanges: List[str]
+    filings: Filings
     stateOfIncorporationDescription: Literal[
         "AK",
         "AL",
@@ -293,6 +327,24 @@ class SECFilings:
         self._instance = SECFilingsModel(
             companyfacts=companyfacts, submissions=submissions
         )
+
+        self.date_of_latest_filing = self._extract_latest_filing_date(submissions)
+
+    def _extract_latest_filing_date(self, submissions: Submissions) -> Optional[str]:
+        """
+        Extracts the most recent filing date from the 'RecentFilings' section.
+        Returns the latest date as a string in 'YYYY-MM-DD' format.
+        """
+        try:
+            report_dates = submissions.filings.recent.filingDate
+            if report_dates:
+                latest_date = max(
+                    datetime.strptime(date, DATE_FORMAT) for date in report_dates
+                )
+                return latest_date.strftime(DATE_FORMAT)
+        except Exception as e:
+            print(f"Error extracting latest filing date: {e}")
+        return None  # Return None if no valid date is found
 
     def __getattr__(self, name):
         """Redirects attribute access to the TargetModel instance."""
