@@ -1,4 +1,5 @@
 ![Test Status](https://github.com/Cemlyn/FairValue/actions/workflows/test.yml/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 
 # FairValue
 

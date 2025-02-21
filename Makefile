@@ -25,7 +25,7 @@ integration-test: # run integration tests
 
 .PHONY: test
 test: # run unit tests
-	pytest --cov fairvalue/tests  --cov-report=xml
+	pytest --cov fairvalue  --cov-report=xml
 
 .PHONY: fmt
 fmt:
