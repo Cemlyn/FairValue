@@ -27,12 +27,32 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: "Debug - List directory contents"
-        run: ls -R
+      - name: "run tests"
+        run: "make test"
 
+      - uses: "actions/upload-artifact@v4"
+        name: "Upload-coverage-report"
+        with:
+          path: "./coverage.xml"
+          retention-days: 1
 
-      - name: "run unit tests"
-        run: "make unit-test"
+  sonarqube:
+    name: SonarQube Cloud
+    runs-on: ubuntu-latest
+    needs:
+      - "unit-test"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: "run integration tests"
-        run: "make integration-test"
+      - name: "Download test coverage report"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "Upload-coverage-report"
+  
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
