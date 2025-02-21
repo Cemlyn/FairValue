@@ -1,5 +1,7 @@
 ![Test Status](https://github.com/Cemlyn/FairValue/actions/workflows/test.yml/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 
 # FairValue
 
