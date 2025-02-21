@@ -31,8 +31,8 @@ jobs:
         run: "make test"
 
       - uses: "actions/upload-artifact@v4"
-        name: "Upload-coverage-report"
         with:
+          name: "coverage-report"
           path: "./coverage.xml"
           retention-days: 1
 
@@ -49,7 +49,7 @@ jobs:
       - name: "Download test coverage report"
         uses: "actions/download-artifact@v4"
         with:
-          name: "Upload-coverage-report"
+          name: "coverage-report"
   
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
