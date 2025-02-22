@@ -1,10 +1,8 @@
 import json
 import statistics
 from calendar import monthrange
-from datetime import datetime, timedelta
-from datetime import date as dte
+import datetime
 from typing import List, Tuple
-from dateutil.relativedelta import relativedelta
 
 import pandas as pd
 
@@ -34,7 +32,7 @@ def fill_dates(dates: List[str]) -> List[str]:
         raise ValueError("No dates provided.")
 
     # Convert date strings to datetime objects
-    parsed_dates = [datetime.strptime(date, DATE_FORMAT) for date in dates]
+    parsed_dates = [datetime.datetime.strptime(date, DATE_FORMAT) for date in dates]
 
     # Check if the list is sorted
     is_chronological = parsed_dates == sorted(parsed_dates)
@@ -59,7 +57,7 @@ def fill_dates(dates: List[str]) -> List[str]:
 
         # Otherwise replace with an inferred date
         else:
-            new_date = datetime(year, mode_month, 1)
+            new_date = datetime.datetime(year, mode_month, 1)
             new_date = to_month_end(new_date).strftime(DATE_FORMAT)
             filled_dates.append(new_date)
 
@@ -72,10 +70,10 @@ def to_month_end(date):
     # Get the last day of the month
     last_day = monthrange(date.year, date.month)[1]
     # Return the datetime object for the month's end
-    return datetime(date.year, date.month, last_day)
+    return datetime.datetime(date.year, date.month, last_day)
 
 
-def generate_future_dates(n: int) -> List[str]:
+def generate_future_dates(date: datetime.date, n: int) -> List[str]:
     """
     Generate a list of year-end dates from today's date extending n years into the future.
 
@@ -88,10 +86,14 @@ def generate_future_dates(n: int) -> List[str]:
     if n < 0:
         raise ValueError("The number of years (n) must be non-negative.")
 
-    today = dte.today()
+    if isinstance(date, str):
+        date = datetime.datetime.strptime(date, DATE_FORMAT)
+    elif not isinstance(date, datetime.date):
+        raise ValueError("'date' must be datetime.date object")
 
     future_dates = [
-        (today + timedelta(days=365 * i)).strftime(DATE_FORMAT) for i in range(n)
+        (date + datetime.timedelta(days=365 * i)).strftime(DATE_FORMAT)
+        for i in range(n)
     ]
     return future_dates
 
@@ -102,7 +104,7 @@ def check_for_missing_dates(date_strings: List[str]) -> List[int]:
         return []  # Return an empty list if there are no dates
 
     DATE_FORMAT = "%Y-%m-%d"  # Ensure date format is defined
-    dates = [datetime.strptime(date, DATE_FORMAT) for date in date_strings]
+    dates = [datetime.datetime.strptime(date, DATE_FORMAT) for date in date_strings]
 
     min_year = min(dates).year
     max_year = max(dates).year
@@ -185,3 +187,11 @@ def drop_nans(a: List[float], b: List[float]) -> Tuple[List[float], List[float]]
             filtered_b.append(value_b)
 
     return filtered_a, filtered_b
+
+
+def date_to_datetime(date: datetime.date):
+
+    if not isinstance(date, datetime.date):
+        raise ValueError("'date' must be a datetime.date object")
+
+    return datetime.datetime.combine(date, datetime.time(23, 59, 59, 999999))

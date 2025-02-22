@@ -1,4 +1,3 @@
-import math
 import datetime
 from typing import List, Dict, Literal, Union
 
@@ -11,6 +10,7 @@ from fairvalue.utils import (
 from fairvalue.models.financials import (
     TickerFinancials,
     ForecastTickerFinancials,
+    fetch_latest_financials,
 )
 from fairvalue.models.base import Floats, Strs
 
@@ -92,57 +92,6 @@ class Stock:
         else:
             self.latest_shares_outstanding = latest_shares_outstanding
 
-    def fetch_latest_financials(
-        self, date: Union[str, datetime.date] = None
-    ) -> TickerFinancials:
-
-        if self.financials is None:
-            raise ValueError(
-                "Unable to fetch latest historical financials. finanicals are 'None'"
-            )
-        elif len(self.financials.free_cashflows) == 0:
-            raise FairValueException(
-                "Unable to fetch financials. financials have len zero."
-            )
-
-        if date is None:
-            raise ValueError(
-                "date must be string of format '%Y-%m-%d', or datetime.date object"
-            )
-
-        if isinstance(date, str):
-            date = datetime.datetime.strptime(date, DATE_FORMAT)
-        elif not isinstance(date, datetime.date):
-            raise ValueError(
-                "'date' must be string of format '%Y-%m-%d', or datetime.date object"
-            )
-
-        n = latest_index(date, self.financials.year_end_dates)
-
-        free_cashflows = self.financials.free_cashflows[:n]
-        year_end_dates = self.financials.year_end_dates[:n]
-        shares_outstanding = [self.latest_shares_outstanding] * (n)
-
-        if len(free_cashflows) == 0:
-            raise ValueError(f"cemlyn error, date: {date}")
-
-        if self.financials.capital_expenditures is not None:
-            capital_expenditures = self.financials.capital_expenditures[:n]
-            return TickerFinancials(
-                free_cashflows=free_cashflows,
-                capital_expenditures=capital_expenditures,
-                year_end_dates=year_end_dates,
-                shares_outstanding=shares_outstanding,
-            )
-
-        shares_series = [0.0] * (n)
-        return TickerFinancials(
-            free_cashflows=free_cashflows,
-            year_end_dates=year_end_dates,
-            capital_expenditures=shares_series,
-            shares_outstanding=shares_outstanding,
-        )
-
     def predict_fairvalue(
         self,
         growth_rate: float = 0.00,
@@ -152,6 +101,7 @@ class Stock:
         historical_features: bool = True,
         forecast_financials: ForecastTickerFinancials = None,
         forecast_date: str = None,
+        use_historic_shares: bool = False,
     ) -> dict:
         """
         Generate a quick fairvalue estimate using the latest financials for a company, projecting
@@ -175,7 +125,14 @@ class Stock:
         else:
             forecast_date = datetime.datetime.strptime(forecast_date, DATE_FORMAT)
 
-        financials = self.fetch_latest_financials(date=forecast_date)
+        latest_financials = fetch_latest_financials(
+            date=forecast_date, financials=self.financials
+        )
+
+        if use_historic_shares:
+            shares_outstanding = latest_financials.shares_outstanding[-1]
+        else:
+            shares_outstanding = self.latest_shares_outstanding
 
         response = dict()
         response["ticker_id"] = self.ticker_id
@@ -192,7 +149,7 @@ class Stock:
             ).days
             response["is_potentially_delisted"] = response["days_since_filing"] > 365
 
-        response["count_filings"] = len(financials.year_end_dates)
+        response["count_filings"] = len(latest_financials.year_end_dates)
         response["forecast_date"] = forecast_date.strftime(DATE_FORMAT)
         response["forecast_horizon"] = number_of_years
 
@@ -205,7 +162,7 @@ class Stock:
                     "Unable to calculate FairValue. Shares outstanding is zero."
                 )
 
-            fcf = self.financials.free_cashflows[-1]
+            fcf = latest_financials.free_cashflows[-1]
             g = growth_rate
 
             free_cashflows = []
@@ -220,18 +177,17 @@ class Stock:
                 data=[discounting_rate for _ in range(number_of_years)]
             )
             # shares_outstanding = self.latest_shares_outstanding
-            year_end_dates = Strs(data=generate_future_dates(n=number_of_years))
+            year_end_dates = Strs(
+                data=generate_future_dates(date=forecast_date, n=number_of_years)
+            )
 
             forecast_financials = ForecastTickerFinancials(
                 year_end_dates=year_end_dates,
                 free_cashflows=free_cashflows,
                 discount_rates=discount_rates,
-                shares_outstanding=self.latest_shares_outstanding,
+                shares_outstanding=shares_outstanding,
                 terminal_growth=g * (1 - growth_decay_rate),
             )
-
-        else:
-            forecast_financials = self.forecast_financials
 
         intrinsic_value = calc_intrinsic_value(
             free_cashflows=forecast_financials.free_cashflows,
@@ -250,23 +206,6 @@ class Stock:
         # pylint: enable=too-many-locals
 
         return dict(RoundedDict(response)._dict)
-
-
-def latest_index(date: datetime.datetime, year_end_dates: List[str]):
-
-    for n, x in enumerate(year_end_dates):
-
-        year_end_date_obj = datetime.datetime.strptime(x, DATE_FORMAT)
-
-        if date < year_end_date_obj:
-
-            if n == 0:
-                raise FairValueException(
-                    f"Unable to retrieve financials before the date '{date}'"
-                )
-            return n
-
-    return n + 1
 
 
 def calc_historical_features(financials: TickerFinancials = None) -> dict:

@@ -1,14 +1,10 @@
+import datetime
 from typing import Optional, List
-from datetime import (
-    datetime,
-)
 
-import pandas as pd
 from pydantic import (
     BaseModel,
     Field,
     model_validator,
-    ValidationError,
     PositiveInt,
     confloat,
     conint,
@@ -17,16 +13,14 @@ from pydantic import (
 from fairvalue.models.base import (
     Floats,
     Strs,
-    NonNegInts,
 )
-from fairvalue.utils import (
-    fill_dates,
-    series_to_list,
-    check_for_missing_dates,
-)
+
 from fairvalue.constants import (
     DATE_FORMAT,
 )
+
+from fairvalue._exceptions import FairValueException
+from fairvalue.utils import date_to_datetime
 
 NonNegFloat = confloat(ge=0)
 NonNegInt = conint(ge=0)
@@ -82,7 +76,8 @@ class TickerFinancials(BaseModel):
             )
 
         parsed_dates = [
-            datetime.strptime(date, DATE_FORMAT) for date in model["year_end_dates"]
+            datetime.datetime.strptime(date, DATE_FORMAT)
+            for date in model["year_end_dates"]
         ]
         years = [date.year for date in parsed_dates]
 
@@ -105,40 +100,6 @@ class TickerFinancials(BaseModel):
                 free_cashflows.append(fcf)
 
             model.free_cashflows = free_cashflows
-
-        # Reindex for missing years
-        # missing_years = check_for_missing_dates(model.year_end_dates)
-
-        # if len(missing_years):
-
-        #     filled_dates = fill_dates(model.year_end_dates)
-
-        #     df = pd.DataFrame(
-        #         {
-        #             "operating_cashflows": model.operating_cashflows,
-        #             "capital_expenditures": model.capital_expenditures,
-        #             "year_end_dates": model.year_end_dates,
-        #             "shares_outstanding": model.shares_outstanding,
-        #             "free_cashflows": model.free_cashflows,
-        #         }
-        #     )
-
-        #     df = df.set_index("year_end_dates")
-        #     df = df.reindex(filled_dates).sort_index().reset_index()
-
-        #     df["shares_outstanding"] = df["shares_outstanding"].ffill()
-        #     df["shares_outstanding"] = df["shares_outstanding"].bfill()
-
-        #     if df["shares_outstanding"].isna().mean():
-        #         raise ValidationError("shares outstanding contains nans.")
-
-        #     model.operating_cashflows = df["operating_cashflows"].astype(float).tolist()
-        #     model.capital_expenditures = (
-        #         df["capital_expenditures"].astype(float).tolist()
-        #     )
-        #     model.shares_outstanding = df["shares_outstanding"].astype(int).tolist()
-        #     model.year_end_dates = df["year_end_dates"].tolist()
-        #     model.free_cashflows = df["free_cashflows"].astype(float).tolist()
 
         return model
 
@@ -182,7 +143,8 @@ class ForecastTickerFinancials(BaseModel):
             )
 
         parsed_dates = [
-            datetime.strptime(date, DATE_FORMAT) for date in model["year_end_dates"]
+            datetime.datetime.strptime(date, DATE_FORMAT)
+            for date in model["year_end_dates"]
         ]
         years = [date.year for date in parsed_dates]
 
@@ -195,3 +157,89 @@ class ForecastTickerFinancials(BaseModel):
             )
 
         return model
+
+
+def latest_index(date: datetime.datetime, year_end_dates: List[str]) -> int:
+    """
+    Determines the index corresponding to the first year-end date that is later than the provided date.
+
+    Args:
+        date (datetime): The reference date.
+        year_end_dates (List[str]): A list of year-end dates as strings, formatted according to DATE_FORMAT.
+
+    Raises:
+        FairValueException: If the given date is earlier than the first year-end date.
+
+    Returns:
+        int: The index corresponding to the financial period for the given date.
+    """
+
+    if not isinstance(date, datetime.datetime):
+        raise FairValueException("'datetime' must be a datetime object")
+
+    if not year_end_dates:
+        raise FairValueException("'year_end_dates' cannot be None")
+
+    for n, x in enumerate(year_end_dates):
+
+        year_end_date_obj = datetime.datetime.strptime(x, DATE_FORMAT)
+
+        if date < year_end_date_obj:
+
+            if n == 0:
+                raise FairValueException(
+                    f"Unable to retrieve financials before the date '{date}'"
+                )
+            return n
+
+    return n + 1
+
+
+def fetch_latest_financials(
+    date: str, financials: TickerFinancials, shares_outstanding: int = None
+):
+
+    if financials is None:
+        raise ValueError(
+            "Unable to fetch latest historical financials. finanicals are 'None'"
+        )
+    elif len(financials.free_cashflows) == 0:
+        raise FairValueException(
+            "Unable to fetch financials. financials have len zero."
+        )
+
+    if date is None:
+        raise ValueError(
+            "date must be string of format '%Y-%m-%d', or datetime.date object"
+        )
+
+    if isinstance(date, str):
+        date = datetime.datetime.strptime(date, DATE_FORMAT)
+        date = date.replace(hour=23, minute=59, second=59)
+    elif isinstance(date, datetime.date):
+        date = date_to_datetime(date)
+    elif not isinstance(date, datetime.date):
+        raise ValueError(
+            "'date' must be string of format '%Y-%m-%d', or datetime.date object"
+        )
+
+    n = latest_index(date, financials.year_end_dates)
+
+    kwargs = {}
+    kwargs["year_end_dates"] = financials.year_end_dates[:n]
+
+    if shares_outstanding is None:
+        kwargs["shares_outstanding"] = financials.shares_outstanding[:n]
+    else:
+        kwargs["shares_outstanding"] = [shares_outstanding] * (n)
+
+    if financials.free_cashflows:
+        kwargs["free_cashflows"] = financials.free_cashflows[:n]
+
+    if financials.capital_expenditures:
+        kwargs["capital_expenditures"] = financials.capital_expenditures[:n]
+
+    if financials.operating_cashflows:
+        kwargs["operating_cashflows"] = financials.operating_cashflows[:n]
+
+    return TickerFinancials(**kwargs)
