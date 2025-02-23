@@ -56,6 +56,25 @@ from fairvalue.models.ingestion import (
                     ]
                 },
             },
+            "CommonStockSharesOutstanding": {
+                "label": "Common Stock, Shares, Outstanding",
+                "description": "Number of shares of common stock outstanding. Common stock represent the ownership interest in a corporation.",
+                "units": {
+                    "shares": [
+                        {
+                            "start": "2007-01-01",
+                            "end": "2007-12-31",
+                            "val": 1656207000,
+                            "accn": "0001047469-10-001018",
+                            "fy": 2009,
+                            "fp": "FY",
+                            "form": "10-K",
+                            "filed": "2010-02-19",
+                            "frame": "CY2007",
+                        }
+                    ]
+                },
+            },
         },
         # Second test case (with only one field)
         {
@@ -73,6 +92,25 @@ from fairvalue.models.ingestion import (
                             "fp": "Q2",
                             "form": "10-Q",
                             "filed": "2009-08-07",
+                            "frame": "CY2007",
+                        }
+                    ]
+                },
+            },
+            "CommonStockSharesOutstanding": {
+                "label": "Common Stock, Shares, Outstanding",
+                "description": "Number of shares of common stock outstanding. Common stock represent the ownership interest in a corporation.",
+                "units": {
+                    "shares": [
+                        {
+                            "start": "2007-01-01",
+                            "end": "2007-12-31",
+                            "val": 1656207000,
+                            "accn": "0001047469-10-001018",
+                            "fy": 2009,
+                            "fp": "FY",
+                            "form": "10-K",
+                            "filed": "2010-02-19",
                             "frame": "CY2007",
                         }
                     ]
@@ -106,6 +144,25 @@ def test_us_gaap_conversion():
                         "fp": "Q2",
                         "form": "10-Q",
                         "filed": "2009-08-07",
+                        "frame": "CY2007",
+                    }
+                ]
+            },
+        },
+        "CommonStockSharesOutstanding": {
+            "label": "Common Stock, Shares, Outstanding",
+            "description": "Number of shares of common stock outstanding. Common stock represent the ownership interest in a corporation.",
+            "units": {
+                "shares": [
+                    {
+                        "start": "2007-01-01",
+                        "end": "2007-12-31",
+                        "val": 1656207000,
+                        "accn": "0001047469-10-001018",
+                        "fy": 2009,
+                        "fp": "FY",
+                        "form": "10-K",
+                        "filed": "2010-02-19",
                         "frame": "CY2007",
                     }
                 ]

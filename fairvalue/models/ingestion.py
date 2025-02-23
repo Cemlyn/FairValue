@@ -67,6 +67,8 @@ class FinancialMetric(BaseModel):
 
 class USGaap(BaseModel):
     NetCashProvidedByUsedInOperatingActivities: FinancialMetric
+    CommonStockSharesOutstanding: FinancialMetric
+    StockholdersEquityNoteStockSplitConversionRatio1: Optional[FinancialMetric] = None
     PaymentsToAcquirePropertyPlantAndEquipment: Optional[FinancialMetric] = None
     model_config = {"extra": "allow"}
 

@@ -80,7 +80,17 @@ def check_for_foreign_currencies(sec_filing: SECFilings) -> bool:
     return False
 
 
-def secfiling_to_financials(sec_filing: SECFilings) -> TickerFinancials:
+# for each stock split find the nearest month in which
+def nearest(split_date: pd.Timestamp, dates: pd.Series):
+    valid_dates = dates[dates <= split_date]
+
+    if valid_dates.empty:
+        return None
+
+    return valid_dates.idxmax()
+
+
+def secfiling_to_financials(sec_filing: SECFilings) -> pd.DataFrame:
 
     is_foreign = (
         not state_dict[sec_filing.submissions.stateOfIncorporationDescription]
@@ -105,66 +115,89 @@ def secfiling_to_financials(sec_filing: SECFilings) -> TickerFinancials:
         capital_expenditures = None
 
     shares_outstanding = (
-        sec_filing.companyfacts.facts.dei.EntityCommonStockSharesOutstanding.units[
+        sec_filing.companyfacts.facts.us_gaap.CommonStockSharesOutstanding.units[
             "shares"
         ]
     )
 
-    # If foreign need to convert shares outstanding into USD equivalent
-    # For example,
-    if is_foreign:
-        if hasattr(
-            sec_filing.companyfacts.facts.dei, "EntityListingDepositoryReceiptRatio"
-        ) and hasattr(
-            sec_filing.companyfacts.facts.dei.EntityListingDepositoryReceiptRatio,
-            "units",
-        ):
-            adr_ratios = sec_filing.companyfacts.facts.dei.EntityListingDepositoryReceiptRatio.units[
-                "pure"
-            ]
-        else:
-            raise ParseException(
-                "Could not find EntityListingDepositoryReceiptRatio in filing for foreign company."
+    shares_outstanding_df = datum_to_dataframe(shares_outstanding, SHARES_OUTSTANDING)
+    shares_outstanding_df["end_parsed"] = pd.to_datetime(shares_outstanding_df["end"])
+    shares_outstanding_df["filed_parsed"] = pd.to_datetime(
+        shares_outstanding_df["filed"]
+    )
+
+    # logic to handle stock split. If a filing for an end date which preceded the stock split
+    # is filed after the split, it seems that the new shares outstanding is used in the new filing
+    # causing a historic datapoint to look like the split has already occurred.
+    if (
+        sec_filing.companyfacts.facts.us_gaap.StockholdersEquityNoteStockSplitConversionRatio1
+    ):
+        stock_split_conversions = sec_filing.companyfacts.facts.us_gaap.StockholdersEquityNoteStockSplitConversionRatio1.units[
+            "pure"
+        ]
+
+        stock_split_df = datum_to_dataframe(stock_split_conversions, "stock_split")
+        stock_split_df = stock_split_df[~stock_split_df["frame"].isna()].reset_index(
+            drop=True
+        )
+
+        stock_split_df["end_parsed"] = pd.to_datetime(stock_split_df["end"])
+        stock_split_df = stock_split_df.sort_values(by=["end_parsed"])
+
+        for _, row_df in stock_split_df.iterrows():
+            nearest_date_index = nearest(
+                row_df["end_parsed"], shares_outstanding_df["end_parsed"]
             )
+            shares_outstanding_df.loc[nearest_date_index, "stock_split"] = row_df[
+                "stock_split"
+            ]
+            shares_outstanding_df.loc[nearest_date_index, "stock_split_date"] = row_df[
+                "end_parsed"
+            ]
 
-        shares_outstanding_adj = []
+        shares_outstanding_df["stock_split_date"] = shares_outstanding_df[
+            "stock_split_date"
+        ].bfill()
 
-        for share_count in shares_outstanding:
+        shares_outstanding_df["stock_split"] = shares_outstanding_df[
+            "stock_split"
+        ].fillna(1)
+        shares_outstanding_df["stock_split"] = shares_outstanding_df["stock_split"][
+            ::-1
+        ].cumprod()[::-1]
 
-            share_count_date = datetime.datetime.strptime(share_count.end, DATE_FORMAT)
+        # drop filings that are for financials before the stock split date but were filed after the stock split. In such cases the new filing contains shares outstanding after the split causing confusion.
+        shares_outstanding_df = shares_outstanding_df[
+            ~(
+                (
+                    shares_outstanding_df["end_parsed"]
+                    < shares_outstanding_df["stock_split_date"]
+                )
+                & (
+                    shares_outstanding_df["stock_split_date"]
+                    < shares_outstanding_df["filed_parsed"]
+                )
+            )
+        ]
 
-            for n, adr_ratio in enumerate(adr_ratios):
+    # deduplicating to keep the latest filed 10-k or 20-k after the exclusions above
+    shares_outstanding_df = shares_outstanding_df[
+        shares_outstanding_df["form"].isin(["10-K", "20-F", "20-F/A", "10-K/A"])
+    ]
+    shares_outstanding_df = shares_outstanding_df.sort_values(
+        by=["end_parsed", "filed_parsed"]
+    )
+    shares_outstanding_df = shares_outstanding_df.drop_duplicates(
+        subset=["end_parsed"], keep="last"
+    )
 
-                adr_ratio_date = datetime.datetime.strptime(adr_ratio.end, DATE_FORMAT)
-                if adr_ratio_date > share_count_date:
-                    break
+    shares_outstanding_df[SHARES_OUTSTANDING] = (
+        shares_outstanding_df[SHARES_OUTSTANDING] * shares_outstanding_df["stock_split"]
+    )
+    shares_outstanding_df["form"] = "10-K"
+    shares_outstanding_df = shares_outstanding_df[["end", "form", SHARES_OUTSTANDING]]
 
-            share_count_copy = copy.deepcopy(share_count)
-            share_count_adj = share_count_copy.val / adr_ratios[n - 1].val
-            share_count_copy.val = share_count_adj
-
-            shares_outstanding_adj.append(share_count_copy)
-
-        shares_outstanding = shares_outstanding_adj
-
-    # Bringing shares outstanding inline with capex and cashflows
-    shares_outstanding_aligned = []
-    for op_cashflow in operating_cashflows:
-
-        op_cashflow_date = datetime.datetime.strptime(op_cashflow.end, DATE_FORMAT)
-
-        for n, share_count in enumerate(shares_outstanding):
-
-            op_cf_date = datetime.datetime.strptime(share_count.end, DATE_FORMAT)
-            if op_cf_date > op_cashflow_date:
-                break
-
-        op_cashflow_copy = copy.deepcopy(op_cashflow)
-        op_cashflow_copy.val = shares_outstanding[n - 1].val
-
-        shares_outstanding_aligned.append(op_cashflow_copy)
-
-    latest_shares_outstanding = shares_outstanding[-1].val
+    latest_shares_outstanding = shares_outstanding_df.iloc[[-1]][SHARES_OUTSTANDING]
 
     operating_cashflows_df = datum_to_dataframe(operating_cashflows, NET_CASHFLOW_OPS)
 
@@ -173,13 +206,9 @@ def secfiling_to_financials(sec_filing: SECFilings) -> TickerFinancials:
             capital_expenditures, CAPITAL_EXPENDITURE
         )
 
-    shares_outstanding_aligned_df = datum_to_dataframe(
-        shares_outstanding_aligned, SHARES_OUTSTANDING
-    )
-
     financials_df = operating_cashflows_df.merge(
-        shares_outstanding_aligned_df[["filed", "end", "form", SHARES_OUTSTANDING]],
-        on=["filed", "end", "form"],
+        shares_outstanding_df[["end", "form", SHARES_OUTSTANDING]],
+        on=["end", "form"],
     )
 
     if capital_expenditures:
@@ -196,7 +225,7 @@ def secfiling_to_financials(sec_filing: SECFilings) -> TickerFinancials:
     )
     financials_df[CAPITAL_EXPENDITURE] = financials_df[CAPITAL_EXPENDITURE].fillna(0.0)
     financials_df[NET_CASHFLOW_OPS] = financials_df[NET_CASHFLOW_OPS].astype(float)
-    financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].astype(int)
+    financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].astype(float)
 
     financials_df["cik"] = sec_filing.companyfacts.cik
     ticker_and_exchange = search_ticker(sec_filing.submissions)
@@ -213,6 +242,20 @@ def secfiling_to_financials(sec_filing: SECFilings) -> TickerFinancials:
 
 
 def secfiling_to_annual_financials(sec_filing: SECFilings) -> TickerFinancials:
+    """
+    Transforms the SECFilings into annualised instance of TickerFinancials.
+
+    Note that 'shares outstanding' is handled seperately as a company may
+    amend a 10-k after a stock split has happened a put the new number of
+    shares outstanding down in the filing. Hence the strategy has been taken
+    to take shares outstanding from the latest_filing within the year?
+
+    Args:
+        sec_filing: List of free cash flows for the forecast period.
+
+    Returns:
+        TickerFinancials: instance containing annualised financials.
+    """
 
     financials_df = secfiling_to_financials(sec_filing=sec_filing)
     financials_df[CAPITAL_EXPENDITURE] = financials_df[CAPITAL_EXPENDITURE].fillna(0.0)
@@ -227,6 +270,8 @@ def secfiling_to_annual_financials(sec_filing: SECFilings) -> TickerFinancials:
     )
     financials_df["end_year"] = financials_df["end_parsed"].dt.year
     financials_df[SHARES_OUTSTANDING] = financials_df[SHARES_OUTSTANDING].abs()
+
+    # Now handling everything else
     financials_df = financials_df[
         financials_df["form"].isin(["10-K", "20-F", "20-F/A", "10-K/A"])
     ]
@@ -236,6 +281,7 @@ def secfiling_to_annual_financials(sec_filing: SECFilings) -> TickerFinancials:
     financials_df = financials_df.drop_duplicates(
         subset=["cik", "end_year"], keep="last"
     )
+
     financials = TickerFinancials(**cfacts_df_to_dict(financials_df))
 
     return financials
