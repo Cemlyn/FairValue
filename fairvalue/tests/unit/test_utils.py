@@ -1,8 +1,11 @@
 import pytest
+import datetime
 
 from fairvalue.utils import (
     fill_dates,
     check_for_missing_dates,
+    generate_future_dates,
+    DATE_FORMAT,
 )
 
 
@@ -87,3 +90,21 @@ def test_for_leap_years():
         2019,
     ]
     assert len(missing_dates) == 1
+
+
+def test_generate_future_dates():
+    # Generate 800 test dates starting from 2023-01-01 through to 2025. Note that 2024 is a leap year.
+    all_dates = [
+        datetime.date(2023, 1, 1) + datetime.timedelta(days=i) for i in range(800)
+    ]
+
+    for forecast_date in all_dates:
+        generated_dates = generate_future_dates(forecast_date, 10)
+        generated_years = [
+            datetime.datetime.strptime(d, DATE_FORMAT).year for d in generated_dates
+        ]
+
+        # Ensure all generated years are unique
+        assert len(set(generated_years)) == len(
+            generated_years
+        ), f"Duplicate years for start date {forecast_date}"

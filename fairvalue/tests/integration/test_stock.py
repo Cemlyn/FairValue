@@ -1,22 +1,54 @@
-import os
 import pytest
-
-import pandas as pd
-
 from fairvalue import Stock
-from fairvalue.utils import load_json
 from fairvalue.models.ingestion import SECFilings
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_DATA_PATH = os.path.join(BASE_DIR, "..", "data", "APPL")
+
+# =============================================================================
+# SEC Filing Initialization Tests
+# =============================================================================
 
 
-def test_predict_fairvalue_with_full_financials():
+@pytest.mark.parametrize("company", ["AAPL", "NVDA"])
+def test_stock_initialization_with_sec_filing(company, sec_data):
+    """
+    Test that no errors are raised when initialising a stock with an SECFilings arg
+    and correct financials are extracted from the SECFilings object.
+    """
+    sec_filling = SECFilings(
+        companyfacts=sec_data["company_facts"], submissions=sec_data["submissions"]
+    )
+    stock = Stock(sec_filing=sec_filling)
+
+    assert stock.ticker_id == company
+    assert stock.cik == sec_filling.companyfacts.cik
+    assert stock.entity_name == sec_filling.companyfacts.entityName
+
+    reconciliation_file = sec_data["reconciliation-file"]
+
+    assert (
+        stock.financials.capital_expenditures
+        == reconciliation_file["capital_expenditures"]
+    )
+    assert (
+        stock.financials.shares_outstanding == reconciliation_file["shares_outstanding"]
+    )
+    assert stock.financials.year_end_dates == reconciliation_file["year_end_dates"]
+    assert (
+        stock.financials.operating_cashflows == reconciliation_file["net_ops_cashflows"]
+    )
+    assert stock.financials.free_cashflows == reconciliation_file["free_cashflows"]
+
+
+# =============================================================================
+# User-Defined Financials Tests
+# =============================================================================
+
+
+def test_stock_initialization_with_user_financials():
     """
     Test that the user-defined financials input method works
-    where the user inputs capital expenditure and operating cashflows only.
+    where the user inputs all financials information.
     """
-
     historical_finances = {
         "operating_cashflows": [10],
         "capital_expenditures": [1],
@@ -36,20 +68,21 @@ def test_predict_fairvalue_with_full_financials():
 
     assert stock.ticker_id == "TEST"
     assert stock.cik == "123ABC"
+    assert stock.financials.capital_expenditures == [1]
+    assert stock.financials.shares_outstanding == [100]
+    assert stock.financials.year_end_dates == ["2020-01-01"]
+    assert stock.financials.operating_cashflows == [10]
+    assert stock.financials.free_cashflows == [-3]
 
-    stock.predict_fairvalue()
 
-
-def test_predict_fairvalue_with_capex_and_ops_cashflow():
+def test_stock_initialization_with_user_financials_fcf_only():
     """
     Test that the user-defined financials input method works
-    where the user inputs capital expenditure and operating cashflows only.
+    where the user inputs provides free cashflows only
     """
-
     historical_finances = {
-        "operating_cashflows": [10],
-        "capital_expenditures": [1],
         "year_end_dates": ["2020-01-01"],
+        "free_cashflows": [-3],
         "shares_outstanding": [100],
     }
 
@@ -64,70 +97,55 @@ def test_predict_fairvalue_with_capex_and_ops_cashflow():
 
     assert stock.ticker_id == "TEST"
     assert stock.cik == "123ABC"
+    assert stock.financials.shares_outstanding == [100]
+    assert stock.financials.year_end_dates == ["2020-01-01"]
+    assert stock.financials.free_cashflows == [-3]
 
-    stock.predict_fairvalue()
 
-
-def test_predict_fairvalue_with_free_cashflow_only():
+def test_stock_initialization_with_user_financials_no_fcf():
     """
-    Test that the user-defined input method works
-    when the user inputs free_cashflows only.
+    Test that the user-defined financials input method works
+    where the user inputs provides free cashflows only
     """
-
-    financials = {
-        "year_end_dates": ["2025-01-01"],
-        "free_cashflows": [108807000000],
-        "shares_outstanding": [15115823000],
+    historical_finances = {
+        "operating_cashflows": [10, 12],
+        "capital_expenditures": [1, 2],
+        "year_end_dates": ["2020-01-01", "2021-01-01"],
+        "shares_outstanding": [100, 100],
     }
 
-    stock = Stock(ticker_id="AAPL", historical_financials=financials)
-
-    stock.predict_fairvalue(growth_rate=0.02, number_of_years=10, discounting_rate=0.04)
-
-
-@pytest.fixture
-def company_facts_dict():
-    return load_json(
-        os.path.join(TEST_DATA_PATH, "sec-filing-companyfacts-CIK0000320193.json")
+    stock = Stock(
+        ticker_id="TEST",
+        exchange=["NASDAQ"],
+        cik="123ABC",
+        latest_shares_outstanding=3200,
+        entity_name="test corp",
+        historical_financials=historical_finances,
     )
 
+    assert stock.ticker_id == "TEST"
+    assert stock.cik == "123ABC"
+    assert stock.financials.capital_expenditures == [1, 2]
+    assert stock.financials.shares_outstanding == [100, 100]
+    assert stock.financials.year_end_dates == ["2020-01-01", "2021-01-01"]
+    assert stock.financials.operating_cashflows == [10, 12]
+    assert stock.financials.free_cashflows == [9, 10]
 
-@pytest.fixture
-def submissions_dict():
-    return load_json(
-        os.path.join(TEST_DATA_PATH, "sec-filing-submissions-CIK0000320193.json")
-    )
+
+# =============================================================================
+# Test is_potentially_delisted variable
+# =============================================================================
 
 
-def test_initialization_with_sec_filing(company_facts_dict, submissions_dict):
+@pytest.mark.parametrize("company", ["AAPL", "NVDA"])
+def test_stock_initialization_with_sec_filing(company, sec_data):
     """
-    Test that no errors are raised when initialising a stock with an SECFillings arg.
+    Test that no errors are raised when initialising a stock with an SECFilings arg.
     """
-
     sec_filling = SECFilings(
-        companyfacts=company_facts_dict, submissions=submissions_dict
+        companyfacts=sec_data["company_facts"], submissions=sec_data["submissions"]
     )
     stock = Stock(sec_filing=sec_filling)
 
-    assert stock.ticker_id == "AAPL"
-    assert stock.entity_name == "Apple Inc."
-    assert stock.cik == "320193"
-
-    stock.predict_fairvalue()
-
-
-def test_financials_with_sec_filing(company_facts_dict, submissions_dict):
-    """
-    Test that no errors are raised when initialising a stock with an SECFillings arg.
-    """
-
-    sec_filling = SECFilings(
-        companyfacts=company_facts_dict, submissions=submissions_dict
-    )
-    stock = Stock(sec_filing=sec_filling)
-
-    assert stock.ticker_id == "AAPL"
-    assert stock.entity_name == "Apple Inc."
-    assert stock.cik == "320193"
-
-    stock.predict_fairvalue()
+    assert stock.ticker_id == company
+    assert stock.cik == sec_filling.companyfacts.cik

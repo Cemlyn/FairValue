@@ -30,13 +30,13 @@ class Stock:
 
     def __init__(
         self,
-        ticker_id: str = None,
-        exchange: Literal["NYSE", "CBOE", "NASDAQ", "NONE"] = "NONE",
-        cik: str = None,
+        ticker_id: Union[str, None] = None,
+        exchange: Union[Literal["NYSE", "CBOE", "NASDAQ", "NONE"], None] = "NONE",
+        cik: Union[str, None] = None,
         latest_shares_outstanding: Union[int, None] = None,
-        entity_name: str = None,
-        historical_financials: dict = None,
-        sec_filing: SECFilingsModel = None,
+        entity_name: Union[str, None] = None,
+        historical_financials: Union[dict, None] = None,
+        sec_filing: Union[SECFilingsModel, None] = None,
     ):
         """
         Initialize the CompanyFinancials class with a DataFrame.
@@ -45,22 +45,26 @@ class Stock:
             dataframe (pd.DataFrame): DataFrame containing 'year', 'free_cashflow', 'capex', and 'shares_outstanding'.
         """
 
-        self.ticker_id = ticker_id
-        self.exchange = exchange
-        self.cik = cik
-        self.entity_name = entity_name
+        if sec_filing is None:
 
-        if (
-            (latest_shares_outstanding is None)
-            and (historical_financials is None)
-            and (sec_filing is None)
-        ):
-            raise FairValueException(
-                "latest_shares_outstanding, or historical_financials or sec_filing must be provided."
-            )
+            if ticker_id is None:
+                raise FairValueException(
+                    "ticker_id must be provided if sec_filing is not provided."
+                )
+            else:
+                self.ticker_id = ticker_id
 
-        if historical_financials:
-            self.financials = TickerFinancials(**historical_financials)
+            self.exchange = exchange
+            self.cik = cik
+            self.entity_name = entity_name
+
+            if (latest_shares_outstanding is None) and (historical_financials is None):
+                raise FairValueException(
+                    "latest_shares_outstanding, or historical_financials or sec_filing must be provided."
+                )
+
+            if historical_financials:
+                self.financials = TickerFinancials(**historical_financials)
 
         elif sec_filing:
 
@@ -68,24 +72,27 @@ class Stock:
                 zip(sec_filing.submissions.tickers, sec_filing.submissions.exchanges)
             )
             shortest_key = min(ticker_dict, key=len)
+            self.ticker_id = shortest_key
+            self.exchange = ticker_dict[shortest_key]
+            self.entity_name = sec_filing.companyfacts.entityName
+            self.cik = sec_filing.companyfacts.cik
 
-            if self.ticker_id is None:
-                self.ticker_id = shortest_key
+            if (
+                hasattr(sec_filing, "date_of_latest_filing")
+                and sec_filing.date_of_latest_filing is not None
+            ):
+                self.days_since_filing = (
+                    datetime.datetime.now().date()
+                    - datetime.datetime.strptime(
+                        sec_filing.date_of_latest_filing, DATE_FORMAT
+                    ).date()
+                ).days
+                self.is_potentially_delisted = self.days_since_filing > 365
+            else:
+                self.date_of_latest_filing = None
+                self.is_potentially_delisted = None
 
-            if self.exchange is None:
-                self.exchange = ticker_dict[shortest_key]
-
-            if self.entity_name is None:
-                self.entity_name = sec_filing.companyfacts.entityName
-
-            if self.cik is None:
-                self.cik = sec_filing.companyfacts.cik
-
-            self.date_of_latest_filing = sec_filing.date_of_latest_filing
             self.financials = secfiling_to_annual_financials(sec_filing=sec_filing)
-
-        else:
-            self.financials = None
 
         if latest_shares_outstanding is None:
             self.latest_shares_outstanding = self.financials.shares_outstanding[-1]
@@ -95,12 +102,12 @@ class Stock:
     def predict_fairvalue(
         self,
         growth_rate: float = 0.00,
-        growth_decay_rate: float = 0.00,
-        discounting_rate: float = 0.05,
+        terminal_growth_rate: float = 0.00,
+        discounting_rate: float = 0.04,
         number_of_years: int = 10,
-        historical_features: bool = True,
-        forecast_financials: ForecastTickerFinancials = None,
-        forecast_date: str = None,
+        historical_features: bool = False,
+        forecast_financials: Union[ForecastTickerFinancials, None] = None,
+        forecast_date: Union[str, None] = None,
         use_historic_shares: bool = False,
     ) -> dict:
         """
@@ -139,16 +146,6 @@ class Stock:
         response["exchange"] = self.exchange
         response["cik"] = self.cik
         response["entity_name"] = self.entity_name
-
-        if hasattr(self, "date_of_latest_filing") and self.date_of_latest_filing:
-            response["days_since_filing"] = (
-                forecast_date.date()
-                - datetime.datetime.strptime(
-                    self.date_of_latest_filing, DATE_FORMAT
-                ).date()
-            ).days
-            response["is_potentially_delisted"] = response["days_since_filing"] > 365
-
         response["count_filings"] = len(latest_financials.year_end_dates)
         response["forecast_date"] = forecast_date.strftime(DATE_FORMAT)
         response["forecast_horizon"] = number_of_years
@@ -169,7 +166,6 @@ class Stock:
 
             for _ in range(number_of_years):
                 fcf = fcf * (1 + g) / (1 + discounting_rate)
-                g = g * (1 - growth_decay_rate)
                 free_cashflows.append(fcf)
 
             free_cashflows = Floats(data=free_cashflows)
@@ -186,7 +182,7 @@ class Stock:
                 free_cashflows=free_cashflows,
                 discount_rates=discount_rates,
                 shares_outstanding=shares_outstanding,
-                terminal_growth=g * (1 - growth_decay_rate),
+                terminal_growth=terminal_growth_rate,
             )
 
         intrinsic_value = calc_intrinsic_value(
@@ -198,6 +194,8 @@ class Stock:
 
         response.update(intrinsic_value)
 
+        # response['fcf'] = forecast_financials.free_cashflows[-1]
+
         # calculate features
         if historical_features and self.financials is not None:
             features = calc_historical_features(self.financials)
@@ -205,7 +203,68 @@ class Stock:
 
         # pylint: enable=too-many-locals
 
-        return dict(RoundedDict(response)._dict)
+        return dict(RoundedDict(response)._dict), forecast_financials
+
+
+def calc_intrinsic_value(
+    free_cashflows: List[float],
+    discount: List[float],
+    terminal_growth: float,
+    shares_outstanding: int,
+) -> Dict[str, float]:
+    """
+    Calculate the intrinsic value of a series of free cash flows using
+    the Discounted Cash Flow (DCF) method.
+
+    Args:
+        free_cashflows (list): List of free cash flows for the forecast period.
+        growth (list): Annual growth rates for free cash flows (in decimal, e.g., 0.05 for 5%).
+        discount (list): Annual discount rates (in decimal, e.g., 0.1 for 10%).
+        terminal_growth (float): Terminal growth rate (in decimal, e.g., 0.03 for 3%).
+
+    Returns:
+        float: The intrinsic value of the cash flows.
+    """
+
+    if terminal_growth > discount[-1]:
+        raise FairValueException(
+            "Terminal growth rate must be less than the discounting rate."
+        )
+
+    # Calculate the present value of forecasted free cash flows
+    present_value_fcf = 0
+    for i in range(len(free_cashflows)):
+        discounted_fcf = max(
+            free_cashflows[i] / (1 + discount[i]) ** (i + 1),
+            0,
+        )
+        present_value_fcf += discounted_fcf
+
+    # Calculate the terminal value
+    terminal_value = (
+        free_cashflows[-1] * (1 + terminal_growth) / (discount[-1] - terminal_growth)
+    )
+
+    # Discount the terminal value to present
+    present_value_terminal = terminal_value / (1 + discount[-1]) ** len(free_cashflows)
+
+    # Total intrinsic value
+    company_value = present_value_fcf + present_value_terminal
+
+    response = {}
+    response["shares_outstanding"] = shares_outstanding
+    response["company_value"] = company_value
+
+    intrinsic_value = np.where(
+        shares_outstanding > 0, company_value / shares_outstanding, float("nan")
+    )
+
+    if isinstance(intrinsic_value, np.ndarray):
+        intrinsic_value = intrinsic_value.item(0)
+
+    response["intrinsic_value"] = intrinsic_value
+
+    return response
 
 
 def calc_historical_features(financials: TickerFinancials = None) -> dict:
@@ -242,59 +301,3 @@ def calc_historical_features(financials: TickerFinancials = None) -> dict:
     features["median_fcf_growth_l4y"] = np.median(growth)
 
     return features
-
-
-def calc_intrinsic_value(
-    free_cashflows: List[float],
-    discount: List[float],
-    terminal_growth: float,
-    shares_outstanding: int,
-) -> Dict[str, float]:
-    """
-    Calculate the intrinsic value of a series of free cash flows using
-    the Discounted Cash Flow (DCF) method.
-
-    Args:
-        free_cashflows (list): List of free cash flows for the forecast period.
-        growth (list): Annual growth rates for free cash flows (in decimal, e.g., 0.05 for 5%).
-        discount (list): Annual discount rates (in decimal, e.g., 0.1 for 10%).
-        terminal_growth (float): Terminal growth rate (in decimal, e.g., 0.03 for 3%).
-
-    Returns:
-        float: The intrinsic value of the cash flows.
-    """
-
-    # Calculate the present value of forecasted free cash flows
-    present_value_fcf = 0
-    for i in range(len(free_cashflows)):
-        discounted_fcf = max(
-            free_cashflows[i] / (1 + discount[i]) ** (i + 1),
-            0,
-        )
-        present_value_fcf += discounted_fcf
-
-    # Calculate the terminal value
-    terminal_value = (
-        free_cashflows[-1] * (1 + terminal_growth) / (discount[-1] - terminal_growth)
-    )
-
-    # Discount the terminal value to present
-    present_value_terminal = terminal_value / (1 + discount[-1]) ** len(free_cashflows)
-
-    # Total intrinsic value
-    company_value = present_value_fcf + present_value_terminal
-
-    response = {}
-    response["shares_outstanding"] = shares_outstanding
-    response["company_value"] = company_value
-
-    intrinsic_value = np.where(
-        shares_outstanding > 0, company_value / shares_outstanding, float("nan")
-    )
-
-    if isinstance(intrinsic_value, np.ndarray):
-        intrinsic_value = intrinsic_value.item(0)
-
-    response["intrinsic_value"] = intrinsic_value
-
-    return response

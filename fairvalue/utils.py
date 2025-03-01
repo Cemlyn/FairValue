@@ -1,6 +1,6 @@
 import json
 import statistics
-from calendar import monthrange
+import calendar
 import datetime
 from typing import List, Tuple
 
@@ -68,33 +68,25 @@ def fill_dates(dates: List[str]) -> List[str]:
 
 def to_month_end(date):
     # Get the last day of the month
-    last_day = monthrange(date.year, date.month)[1]
+    last_day = calendar.monthrange(date.year, date.month)[1]
     # Return the datetime object for the month's end
     return datetime.datetime(date.year, date.month, last_day)
 
 
 def generate_future_dates(date: datetime.date, n: int) -> List[str]:
-    """
-    Generate a list of year-end dates from today's date extending n years into the future.
+    future_dates = []
 
-    Args:
-        n (int): Number of years into the future.
+    for i in range(1, n + 1):
+        new_year = date.year + i
 
-    Returns:
-        list: A list of year-end dates as strings in the format "%Y-%m-%d".
-    """
-    if n < 0:
-        raise ValueError("The number of years (n) must be non-negative.")
+        # Handle February 29 separately
+        if date.month == 2 and date.day == 29 and not calendar.isleap(new_year):
+            future_dates.append(datetime.date(new_year, 2, 28).strftime("%Y-%m-%d"))
+        else:
+            future_dates.append(
+                datetime.date(new_year, date.month, date.day).strftime("%Y-%m-%d")
+            )
 
-    if isinstance(date, str):
-        date = datetime.datetime.strptime(date, DATE_FORMAT)
-    elif not isinstance(date, datetime.date):
-        raise ValueError("'date' must be datetime.date object")
-
-    future_dates = [
-        (date + datetime.timedelta(days=365 * i)).strftime(DATE_FORMAT)
-        for i in range(n)
-    ]
     return future_dates
 
 

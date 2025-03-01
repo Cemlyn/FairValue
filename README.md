@@ -1,10 +1,8 @@
 # FairValue
 
 ![Test Status](https://github.com/Cemlyn/FairValue/actions/workflows/test.yml/badge.svg)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 
 [![Python Version](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/downloads/release/python-312/)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -126,6 +124,18 @@ valuation = stock.predict_fairvalue(
    - Focuses solely on free cash flows
    - Excludes balance sheet items
    - Does not consider market conditions or company-specific risks
+
+## 🚀 Roadmap & Planned Improvements
+
+### Near Term
+- Balance sheet integration for more comprehensive valuations
+- Terminal value calculation using exit multiples
+- Support for non-US incorporated companies
+- data quality indicators
+
+### Medium Term
+- Automated growth rate suggestions based on historical data
+- Multi-currency support for non-USD financial statements
 
 ## License
 

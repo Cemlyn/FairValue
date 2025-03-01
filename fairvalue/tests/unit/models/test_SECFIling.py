@@ -1,94 +1,46 @@
-import os
 import pytest
-
-import pandas as pd
-
-from fairvalue.utils import load_json
 from fairvalue.models.ingestion import SECFilings
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_DATA_PATH = os.path.join(BASE_DIR, "..", "..", "data", "APPL")
 
+@pytest.mark.parametrize("company", ["AAPL", "NVDA"])
+def test_financials_capital_expenditures(sec_data):
 
-@pytest.fixture
-def company_facts_dict():
-    return load_json(
-        os.path.join(TEST_DATA_PATH, "sec-filing-companyfacts-CIK0000320193.json")
+    sec_filing = SECFilings(
+        companyfacts=sec_data["company_facts"], submissions=sec_data["submissions"]
     )
 
-
-@pytest.fixture
-def submissions_dict():
-    return load_json(
-        os.path.join(TEST_DATA_PATH, "sec-filing-submissions-CIK0000320193.json")
-    )
-
-
-@pytest.fixture
-def capital_expenditures_recon():
-    return pd.read_csv(
-        os.path.join(TEST_DATA_PATH, "reconciliation-capital-expenditures.csv")
-    )
-
-
-def test_financials_capital_expenditures(
-    company_facts_dict, submissions_dict, capital_expenditures_recon
-):
-
-    sec_filling = SECFilings(
-        companyfacts=company_facts_dict, submissions=submissions_dict
-    )
-
-    capex_values = (
-        sec_filling.companyfacts.facts.us_gaap.CommonStockSharesOutstanding.units[
-            "shares"
-        ]
-    )
-
-    capex_values == capital_expenditures_recon.values.ravel().tolist()
-
-
-@pytest.fixture
-def net_ops_cashflows_recon():
-    return pd.read_csv(
-        os.path.join(TEST_DATA_PATH, "reconciliation-net-ops-cashflows.csv")
-    )
-
-
-def test_financials_net_ops_cashflows(
-    company_facts_dict, submissions_dict, net_ops_cashflows_recon
-):
-
-    sec_filling = SECFilings(
-        companyfacts=company_facts_dict, submissions=submissions_dict
-    )
-
-    capex_values = sec_filling.companyfacts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units[
+    capex_values = sec_filing.companyfacts.facts.us_gaap.PaymentsToAcquirePropertyPlantAndEquipment.units[
         "USD"
     ]
 
-    capex_values == net_ops_cashflows_recon.values.ravel().tolist()
+    capex_values == sec_data["reconciliation-file"]["capital_expenditures"]
 
 
-@pytest.fixture
-def shares_outstanding_recon():
-    return pd.read_csv(
-        os.path.join(TEST_DATA_PATH, "reconciliation-net-ops-cashflows.csv")
+@pytest.mark.parametrize("company", ["AAPL", "NVDA"])
+def test_financials_net_ops_cashflows(sec_data):
+
+    sec_filing = SECFilings(
+        companyfacts=sec_data["company_facts"], submissions=sec_data["submissions"]
     )
 
+    capex_values = sec_filing.companyfacts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units[
+        "USD"
+    ]
 
-def test_financials_shares_outstanding(
-    company_facts_dict, submissions_dict, shares_outstanding_recon
-):
+    capex_values == sec_data["reconciliation-file"]["net_ops_cashflows"]
 
-    sec_filling = SECFilings(
-        companyfacts=company_facts_dict, submissions=submissions_dict
+
+@pytest.mark.parametrize("company", ["AAPL", "NVDA"])
+def test_financials_shares_outstanding(sec_data):
+
+    sec_filing = SECFilings(
+        companyfacts=sec_data["company_facts"], submissions=sec_data["submissions"]
     )
 
     capex_values = (
-        sec_filling.companyfacts.facts.us_gaap.CommonStockSharesOutstanding.units[
+        sec_filing.companyfacts.facts.us_gaap.CommonStockSharesOutstanding.units[
             "shares"
         ]
     )
 
-    capex_values == shares_outstanding_recon.values.ravel().tolist()
+    capex_values == sec_data["reconciliation-file"]["shares_outstanding"]
