@@ -13,7 +13,7 @@ install: venv # Install dependencies
 
 .PHONY: process-data
 process-data: # Process the data
-	$(PYTHON) process_company_facts.py
+	$(PYTHON) scripts/ingest_filings.py
 
 .PHONY: unit-test
 unit-test: # run unit tests

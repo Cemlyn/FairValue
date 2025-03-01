@@ -47,7 +47,6 @@ def fill_dates(dates: List[str]) -> List[str]:
     end_year = parsed_dates[-1].year
 
     filled_dates = []
-    count = 0
     for year in range(start_year, end_year + 1):
 
         # If year already exists take original date
@@ -60,8 +59,6 @@ def fill_dates(dates: List[str]) -> List[str]:
             new_date = datetime.datetime(year, mode_month, 1)
             new_date = to_month_end(new_date).strftime(DATE_FORMAT)
             filled_dates.append(new_date)
-
-        count += 1
 
     return filled_dates
 

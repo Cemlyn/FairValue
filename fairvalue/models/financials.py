@@ -51,13 +51,13 @@ class TickerFinancials(BaseModel):
     def validate_data(cls, model):
 
         # check that captial expenditure and operating cashflows are provided if free_cashflow isn't
-        if "free_cashflows" not in model:
-            if ("operating_cashflows" not in model) or (
-                "capital_expenditures" not in model
-            ):
-                raise ValueError(
-                    "If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided."
-                )
+        if ("free_cashflows" not in model) and (
+            ("operating_cashflows" not in model)
+            or ("capital_expenditures" not in model)
+        ):
+            raise ValueError(
+                "If free_cashflows aren't provided operating_cashflows and capital_expenditures must be provided."
+            )
 
         # Ensure all required fields have the same length
         required_fields = [

@@ -30,7 +30,7 @@ from fairvalue.utils import load_json
 from fairvalue import secfiling_to_financials, ParseException
 from fairvalue.models.ingestion import CompanyFacts, Submissions, SECFilings
 
-from logger_conf import get_logger
+from scripts.logger_conf import get_logger
 
 logger = get_logger("ingestion")
 

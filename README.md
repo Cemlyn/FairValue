@@ -97,6 +97,18 @@ valuation = stock.predict_fairvalue(
 }
 ```
 
+## Utility Scripts
+
+The `scripts/` directory contains helpful utilities for working with FairValue:
+
+- `download_sec_filings.py`: Download and cache SEC EDGAR filings
+- `batch_process.py`: Process multiple companies in batch mode
+
+Run scripts from the project root:
+```bash
+python scripts/download_sec_filings.py --ticker AAPL
+```
+
 ## Methodology
 
 ### Data Validation

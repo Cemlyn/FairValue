@@ -30,13 +30,13 @@ class Stock:
 
     def __init__(
         self,
-        ticker_id: Union[str, None] = None,
-        exchange: Union[Literal["NYSE", "CBOE", "NASDAQ", "NONE"], None] = "NONE",
-        cik: Union[str, None] = None,
-        latest_shares_outstanding: Union[int, None] = None,
-        entity_name: Union[str, None] = None,
-        historical_financials: Union[Dict[str, Any], None] = None,
-        sec_filing: Union[SECFilingsModel, None] = None,
+        ticker_id: str | None = None,
+        exchange: Literal["NYSE", "CBOE", "NASDAQ", "NONE"] | None = "NONE",
+        cik: str | None = None,
+        latest_shares_outstanding: int | None = None,
+        entity_name: str | None = None,
+        historical_financials: Dict[str, Any] | None = None,
+        sec_filing: SECFilingsModel | None = None,
     ):
         """
         Initialize the CompanyFinancials class with a DataFrame.
@@ -44,6 +44,8 @@ class Stock:
         Args:
             dataframe (pd.DataFrame): DataFrame containing 'year', 'free_cashflow', 'capex', and 'shares_outstanding'.
         """
+
+        self.financials = None
 
         if sec_filing is None:
 
@@ -65,8 +67,6 @@ class Stock:
 
             if historical_financials:
                 self.financials = TickerFinancials(**historical_financials)
-            else:
-                self.financials = None
 
         elif sec_filing:
 
@@ -108,8 +108,8 @@ class Stock:
         discounting_rate: float = 0.04,
         number_of_years: int = 10,
         historical_features: bool = False,
-        forecast_financials: Union[ForecastTickerFinancials, None] = None,
-        forecast_date: Union[str, None] = None,
+        forecast_financials: ForecastTickerFinancials | None = None,
+        forecast_date: str | None = None,
         use_historic_shares: bool = False,
     ) -> Dict[str, Any]:
         """
@@ -175,7 +175,7 @@ class Stock:
             discount_rates = Floats(
                 data=[discounting_rate for _ in range(number_of_years)]
             )
-            # shares_outstanding = self.latest_shares_outstanding
+
             year_end_dates = Strs(
                 data=generate_future_dates(date=forecast_date, n=number_of_years)
             )

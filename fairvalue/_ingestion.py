@@ -1,6 +1,4 @@
-import copy
 import json
-import datetime
 from typing import List, Dict
 
 import pandas as pd
@@ -339,12 +337,9 @@ def search_ticker(submission: Submissions = None):
     shortest_ticker_exchange = None
     for i in range(len(submission.tickers)):
 
-        if shortest_ticker is None:
-            shortest_ticker = submission.tickers[i]
-            shortest_ticker_len = len(shortest_ticker)
-            shortest_ticker_exchange = submission.exchanges[i]
-
-        elif len(submission.tickers[i]) < shortest_ticker_len:
+        if (shortest_ticker is None) or (
+            len(submission.tickers[i]) < shortest_ticker_len
+        ):
             shortest_ticker = submission.tickers[i]
             shortest_ticker_len = len(shortest_ticker)
             shortest_ticker_exchange = submission.exchanges[i]

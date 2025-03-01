@@ -70,7 +70,7 @@ def daily_trend(
 
 def detrend_series(
     dates: List[str] = None,
-    amounts: List[Union[float, int]] = None,
+    amounts: List[float | int] = None,
     method: Literal["ols", "huber"] = "ols",
 ) -> List[float]:
     """

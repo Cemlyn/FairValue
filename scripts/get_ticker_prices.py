@@ -12,7 +12,6 @@ API_KEY = os.getenv(
     "POLYGON_API_KEY",
     default=None,
 )
-# API_KEY = "HicWT_23n7WSfrv0ywH9_7lfefuix1me"
 
 # Base URL for Polygon.io
 BASE_URL = "https://api.polygon.io/v2/aggs/ticker"
