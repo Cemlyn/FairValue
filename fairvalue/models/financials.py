@@ -6,7 +6,6 @@ from pydantic import (
     Field,
     model_validator,
     PositiveInt,
-    PositiveFloat,
     confloat,
     conint,
 )
@@ -126,7 +125,7 @@ class ForecastTickerFinancials(BaseModel):
         "Number of shares outstanding at the date the investor intends to sell."
     )
 
-    terminal_growth: PositiveFloat = Field(
+    terminal_growth: NonNegFloat = Field(
         description="Terminal Rate used in Gordon Growth Model for terminal growth rate."
     )
 

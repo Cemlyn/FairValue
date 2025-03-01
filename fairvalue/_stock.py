@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Dict, Literal, Union
+from typing import List, Dict, Literal, Union, Any
 
 import numpy as np
 
@@ -35,7 +35,7 @@ class Stock:
         cik: Union[str, None] = None,
         latest_shares_outstanding: Union[int, None] = None,
         entity_name: Union[str, None] = None,
-        historical_financials: Union[dict, None] = None,
+        historical_financials: Union[Dict[str, Any], None] = None,
         sec_filing: Union[SECFilingsModel, None] = None,
     ):
         """
@@ -111,7 +111,7 @@ class Stock:
         forecast_financials: Union[ForecastTickerFinancials, None] = None,
         forecast_date: Union[str, None] = None,
         use_historic_shares: bool = False,
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """
         Generate a quick fairvalue estimate using the latest financials for a company, projecting
         them forward using a growth, growth decay rate and discounting rate
@@ -204,7 +204,7 @@ class Stock:
 
         # pylint: enable=too-many-locals
 
-        return dict(RoundedDict(response)._dict), forecast_financials
+        return dict(RoundedDict(response)._dict)
 
 
 def calc_intrinsic_value(

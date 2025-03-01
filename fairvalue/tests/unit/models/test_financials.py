@@ -293,6 +293,20 @@ def test_forecast_ticker_negative_share_count():
         )
 
 
+def test_forecast_ticker_terminal_zero_shares_outstanding():
+    """Test that USGaap model does not raise a Pydantic ValidationError."""
+    with pytest.raises(
+        ValidationError,
+    ):
+        ForecastTickerFinancials(
+            year_end_dates=["2025-01-01", "2026-01-01"],
+            free_cashflows=[1000, 1000],
+            discount_rates=[0.04, 0.04],
+            terminal_growth=0.02,
+            shares_outstanding=0,
+        )
+
+
 def test_forecast_ticker_terminal_growth_gt_discount():
     """Test that USGaap model does not raise a Pydantic ValidationError."""
     with pytest.raises(
@@ -303,5 +317,5 @@ def test_forecast_ticker_terminal_growth_gt_discount():
             free_cashflows=[1000, 1000],
             discount_rates=[0.04, 0.04],
             terminal_growth=0.05,
-            shares_outstanding=-1000,
+            shares_outstanding=1000,
         )
