@@ -65,6 +65,8 @@ class Stock:
 
             if historical_financials:
                 self.financials = TickerFinancials(**historical_financials)
+            else:
+                self.financials = None
 
         elif sec_filing:
 
@@ -126,32 +128,33 @@ class Stock:
             dict: contains features and calclated intrinsic value.
         """
 
-        # pylint: disable=too-many-locals
-        if forecast_date is None:
-            forecast_date = datetime.datetime.now()
-        else:
-            forecast_date = datetime.datetime.strptime(forecast_date, DATE_FORMAT)
-
-        latest_financials = fetch_latest_financials(
-            date=forecast_date, financials=self.financials
-        )
-
-        if use_historic_shares:
-            shares_outstanding = latest_financials.shares_outstanding[-1]
-        else:
-            shares_outstanding = self.latest_shares_outstanding
-
         response = dict()
         response["ticker_id"] = self.ticker_id
         response["exchange"] = self.exchange
         response["cik"] = self.cik
         response["entity_name"] = self.entity_name
-        response["count_filings"] = len(latest_financials.year_end_dates)
-        response["forecast_date"] = forecast_date.strftime(DATE_FORMAT)
+        response["forecast_date"] = None
         response["forecast_horizon"] = number_of_years
 
         # If forecast financials not available generate using last years
         if forecast_financials is None:
+
+            if forecast_date is None:
+                forecast_date = datetime.datetime.now()
+            else:
+                forecast_date = datetime.datetime.strptime(forecast_date, DATE_FORMAT)
+
+            response["forecast_date"] = forecast_date.strftime(DATE_FORMAT)
+
+            latest_financials = fetch_latest_financials(
+                date=forecast_date, financials=self.financials
+            )
+
+            # pylint: disable=too-many-locals
+            if use_historic_shares:
+                shares_outstanding = latest_financials.shares_outstanding[-1]
+            else:
+                shares_outstanding = self.latest_shares_outstanding
 
             if self.latest_shares_outstanding == 0:
 
@@ -193,8 +196,6 @@ class Stock:
         )
 
         response.update(intrinsic_value)
-
-        # response['fcf'] = forecast_financials.free_cashflows[-1]
 
         # calculate features
         if historical_features and self.financials is not None:

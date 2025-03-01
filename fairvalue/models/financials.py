@@ -6,6 +6,7 @@ from pydantic import (
     Field,
     model_validator,
     PositiveInt,
+    PositiveFloat,
     confloat,
     conint,
 )
@@ -106,22 +107,26 @@ class TickerFinancials(BaseModel):
 
 class ForecastTickerFinancials(BaseModel):
 
-    year_end_dates: Strs = Field(
+    year_end_dates: List[str] = Field(
         ...,
-        description="Dates which each of the data points represent.",
+        description="dates which each of the data points represent",
     )
-    free_cashflows: Floats = Field(
+
+    free_cashflows: List[float] = Field(
         None,
-        description="Annualised free cashflow. Must be floats.",
+        description="freecashflows",
     )
-    discount_rates: Floats = Field(
+
+    discount_rates: List[float] = Field(
         None,
-        description="Annualised discount rate. Must be floats.",
+        description="discount rate",
     )
+
     shares_outstanding: PositiveInt = Field(
         "Number of shares outstanding at the date the investor intends to sell."
     )
-    terminal_growth: float = Field(
+
+    terminal_growth: PositiveFloat = Field(
         description="Terminal Rate used in Gordon Growth Model for terminal growth rate."
     )
 

@@ -1,6 +1,7 @@
 import pytest
 from fairvalue import Stock
 from fairvalue.models.ingestion import SECFilings
+from fairvalue.models.financials import ForecastTickerFinancials
 
 
 # =============================================================================
@@ -130,6 +131,40 @@ def test_stock_initialization_with_user_financials_no_fcf():
     assert stock.financials.year_end_dates == ["2020-01-01", "2021-01-01"]
     assert stock.financials.operating_cashflows == [10, 12]
     assert stock.financials.free_cashflows == [9, 10]
+
+
+def test_stock_initialization_with_no_financials_but_forecast():
+    """
+    Test that the user-defined financials input method works
+    where the user inputs provides free cashflows only
+    """
+
+    stock = Stock(
+        ticker_id="TEST",
+        exchange=["NASDAQ"],
+        cik="123ABC",
+        latest_shares_outstanding=3200,
+        entity_name="test corp",
+    )
+
+    assert stock.ticker_id == "TEST"
+    assert stock.cik == "123ABC"
+
+    forecast_financials = ForecastTickerFinancials(
+        year_end_dates=["2025-01-01", "2026-01-01"],
+        free_cashflows=[1000, 1000],
+        discount_rates=[0.04, 0.04],
+        terminal_growth=0.02,
+        shares_outstanding=1000,
+    )
+
+    stock.predict_fairvalue(
+        growth_rate=0.02,
+        terminal_growth_rate=0.01,
+        discounting_rate=0.04,
+        number_of_years=10,
+        forecast_financials=forecast_financials,
+    )
 
 
 # =============================================================================
