@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Dict, Literal, Union, Any
+from typing import List, Dict, Literal, Any
 
 import numpy as np
 
@@ -31,7 +31,7 @@ class Stock:
     def __init__(
         self,
         ticker_id: str | None = None,
-        exchange: Literal["NYSE", "CBOE", "NASDAQ", "NONE"] | None = "NONE",
+        exchange: Literal["NYSE", "CBOE", "NASDAQ"] | None = None,
         cik: str | None = None,
         latest_shares_outstanding: int | None = None,
         entity_name: str | None = None,
@@ -39,67 +39,107 @@ class Stock:
         sec_filing: SECFilingsModel | None = None,
     ):
         """
-        Initialize the CompanyFinancials class with a DataFrame.
+        Initialize the Stock class with either SEC filing data or user-defined data.
 
         Args:
-            dataframe (pd.DataFrame): DataFrame containing 'year', 'free_cashflow', 'capex', and 'shares_outstanding'.
+            ticker_id (str, optional): Stock ticker symbol
+            exchange (str, optional): Stock exchange (NYSE, CBOE, or NASDAQ)
+            cik (str, optional): SEC Central Index Key
+            latest_shares_outstanding (int, optional): Most recent shares outstanding
+            entity_name (str, optional): Company name
+            historical_financials (Dict, optional): User-provided financial data
+            sec_filing (SECFilingsModel, optional): SEC filing data model
         """
-
-        self.financials = None
-
-        if sec_filing is None:
-
-            if ticker_id is None:
-                raise FairValueException(
-                    "ticker_id must be provided if sec_filing is not provided."
-                )
-            else:
-                self.ticker_id = ticker_id
-
-            self.exchange = exchange
-            self.cik = cik
-            self.entity_name = entity_name
-
-            if (latest_shares_outstanding is None) and (historical_financials is None):
-                raise FairValueException(
-                    "latest_shares_outstanding, or historical_financials or sec_filing must be provided."
-                )
-
-            if historical_financials:
-                self.financials = TickerFinancials(**historical_financials)
-
-        elif sec_filing:
-
-            ticker_dict = dict(
-                zip(sec_filing.submissions.tickers, sec_filing.submissions.exchanges)
+        if sec_filing:
+            self._initialize_from_sec_filing(sec_filing)
+        else:
+            self._initialize_from_user_defined(
+                ticker_id=ticker_id,
+                exchange=exchange,
+                cik=cik,
+                entity_name=entity_name,
+                latest_shares_outstanding=latest_shares_outstanding,
+                historical_financials=historical_financials,
             )
-            shortest_key = min(ticker_dict, key=len)
-            self.ticker_id = shortest_key
-            self.exchange = ticker_dict[shortest_key]
-            self.entity_name = sec_filing.companyfacts.entityName
-            self.cik = sec_filing.companyfacts.cik
 
-            if (
-                hasattr(sec_filing, "date_of_latest_filing")
-                and sec_filing.date_of_latest_filing is not None
-            ):
-                self.days_since_filing = (
-                    datetime.datetime.now().date()
-                    - datetime.datetime.strptime(
-                        sec_filing.date_of_latest_filing, DATE_FORMAT
-                    ).date()
-                ).days
-                self.is_potentially_delisted = self.days_since_filing > 365
-            else:
-                self.date_of_latest_filing = None
-                self.is_potentially_delisted = None
-
-            self.financials = secfiling_to_annual_financials(sec_filing=sec_filing)
-
+        # Set shares outstanding after initialization
         if latest_shares_outstanding is None:
             self.latest_shares_outstanding = self.financials.shares_outstanding[-1]
         else:
             self.latest_shares_outstanding = latest_shares_outstanding
+
+    def _initialize_from_user_defined(
+        self,
+        ticker_id: str | None,
+        exchange: Literal["NYSE", "CBOE", "NASDAQ"] | None,
+        cik: str | None,
+        entity_name: str | None,
+        latest_shares_outstanding: int | None,
+        historical_financials: Dict[str, Any] | None,
+    ):
+        """Initialize stock attributes from user-defined data.
+
+        Args:
+            ticker_id (str): Stock ticker symbol
+            exchange (str): Stock exchange
+            cik (str): SEC Central Index Key
+            entity_name (str): Company name
+            latest_shares_outstanding (int): Number of shares outstanding
+            historical_financials (Dict): User-provided financial data
+
+        Raises:
+            FairValueException: If required data is missing
+        """
+        if ticker_id is None:
+            raise FairValueException("ticker_id must be provided if sec_filing is None")
+
+        self.ticker_id = ticker_id
+        self.exchange = exchange
+        self.cik = cik
+        self.entity_name = entity_name
+
+        if (historical_financials is None) and (latest_shares_outstanding is None):
+            raise FairValueException(
+                "latest_shares_outstanding or historical_financials cannot both be None"
+            )
+
+        if historical_financials is not None:
+            self.financials = TickerFinancials(**historical_financials)
+        else:
+            # Create minimal TickerFinancials with just shares outstanding
+            self.financials = None
+
+    def _initialize_from_sec_filing(self, sec_filing):
+        """Initialize stock attributes from SEC filing data.
+
+        Args:
+            sec_filing (SECFilingsModel): SEC filing data model
+        """
+        ticker_dict = dict(
+            zip(sec_filing.submissions.tickers, sec_filing.submissions.exchanges)
+        )
+        shortest_key = min(ticker_dict, key=len)
+        self.ticker_id = shortest_key
+        self.exchange = ticker_dict[shortest_key]
+        self.entity_name = sec_filing.companyfacts.entityName
+        self.cik = sec_filing.companyfacts.cik
+
+        if (
+            hasattr(sec_filing, "date_of_latest_filing")
+            and sec_filing.date_of_latest_filing is not None
+        ):
+            self.days_since_filing = (
+                datetime.datetime.now().date()
+                - datetime.datetime.strptime(
+                    sec_filing.date_of_latest_filing, DATE_FORMAT
+                ).date()
+            ).days
+            self.is_potentially_delisted = self.days_since_filing > 365
+        else:
+            self.date_of_latest_filing = None
+            self.is_potentially_delisted = None
+
+        self.financials = secfiling_to_annual_financials(sec_filing=sec_filing)
 
     def predict_fairvalue(
         self,

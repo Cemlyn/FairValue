@@ -21,7 +21,7 @@ from fairvalue.constants import (
     FREE_CASHFLOW,
     SHARES_OUTSTANDING,
 )
-from logger_conf import get_logger
+from scripts.logger_conf import get_logger
 
 from fairvalue._exceptions import FairValueException
 
