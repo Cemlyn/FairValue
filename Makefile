@@ -17,15 +17,15 @@ process-data: # Process the data
 
 .PHONY: unit-test
 unit-test: # run unit tests
-	pytest fairvalue/tests/unit
+	pytest tests/unit
 
 .PHONY: integration-test
 integration-test: # run integration tests
-	pytest fairvalue/tests/integration
+	pytest tests/integration
 
 .PHONY: test
 test: # run unit tests
-	pytest --cov fairvalue  --cov-report=xml
+	pytest --cov tests  --cov-report=xml
 
 .PHONY: fmt
 fmt:

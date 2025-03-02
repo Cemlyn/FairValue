@@ -1,10 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fairvalue"
+authors = [
+    {name = "Cemlyn Coirier-Roberts"}
+]
+description = "A Python library for automated company valuations using Discounted Cash Flow (DCF) analysis."
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Apache Software License"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pandas",
+    "pydantic",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+    "isort",
+]
+
+[tool.setuptools.packages]
+find = { include = ["fairvalue"], exclude = ["data","scripts"] }
+
+
 # Configuration for pytest
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra --ignore=data/"
-testpaths = [
-    "tests",
-]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=fairvalue --cov-report=xml"
 
 # Configuration for Black, the Python code formatter
 [tool.black]
@@ -29,3 +67,7 @@ disable = [
     "use-dict-literal"
 ]
 max-line-length = 130
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
