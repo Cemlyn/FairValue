@@ -31,7 +31,7 @@ class Datum(BaseModel):
     """
 
     end: str  # Must be a valid date
-    val: Union[int, float]
+    val: int | float
     accn: Optional[str] = None
     fy: Optional[int] = None
     fp: Optional[str] = None
@@ -155,7 +155,7 @@ class Filings(BaseModel):
 
 
 class Submissions(BaseModel):
-    cik: Union[str, int]
+    cik: str | int
     entityType: Optional[str] = None
     sic: Optional[str] = None
     sicDescription: Optional[str] = None
@@ -286,7 +286,7 @@ class Submissions(BaseModel):
 
 
 class CompanyFacts(BaseModel):
-    cik: Union[str, int]
+    cik: str | int
     entityName: str
     facts: Facts
 
@@ -306,8 +306,8 @@ class SECFilings:
 
     def __init__(
         self,
-        companyfacts: Union[CompanyFacts, str],
-        submissions: Union[Submissions, str],
+        companyfacts: CompanyFacts | str,
+        submissions: Submissions | str,
     ):
 
         if isinstance(companyfacts, str) or isinstance(submissions, str):

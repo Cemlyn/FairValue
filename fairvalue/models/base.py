@@ -34,6 +34,14 @@ class Floats(BaseModel):
     ) -> float:
         return sum(self.data)
 
+    @field_validator("data", mode="before")
+    def enforce_floats(cls, values):
+        if any(
+            isinstance(v, (bool, str, bytes)) for v in values
+        ):  # Ensure no booleans are allowed
+            raise ValueError("Boolean, str and bytes values are not allowed in Floats.")
+        return values
+
 
 class NonNegFloats(Floats):
 

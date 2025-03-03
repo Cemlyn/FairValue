@@ -10,11 +10,6 @@ from pydantic import (
     conint,
 )
 
-from fairvalue.models.base import (
-    Floats,
-    Strs,
-)
-
 from fairvalue.constants import (
     DATE_FORMAT,
 )
