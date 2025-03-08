@@ -108,7 +108,7 @@ class Stock:
 
     def _initialize_from_sec_filing(self, sec_filing: SECFilingsModel):
         """Initialize stock attributes from SEC filing data.
-        
+
         Args:
             sec_filing (SECFilingsModel): SEC filing data model
         """

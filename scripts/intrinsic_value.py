@@ -21,11 +21,9 @@ from fairvalue.constants import (
     FREE_CASHFLOW,
     SHARES_OUTSTANDING,
 )
-from scripts.logger_conf import get_logger
 
 from fairvalue._exceptions import FairValueException
 
-logger = get_logger("ingestion")
 
 DIR = "data"
 
@@ -92,7 +90,6 @@ if __name__ == "__main__":
 
             intrinsic_value = stock.predict_fairvalue(
                 growth_rate=0.0,
-                growth_decay_rate=0.01,
                 discounting_rate=0.05,
                 number_of_years=10,
                 historical_features=True,

@@ -9,7 +9,14 @@ from pydantic import BaseModel, Field, field_validator
 from fairvalue.models.financials import TickerFinancials
 from fairvalue._exceptions import ParseException
 from fairvalue.models.utils import validate_date
-from fairvalue.constants import STATE_OF_INCORP_DICT, DATE_FORMAT, CAPITAL_EXPENDITURE, FREE_CASHFLOW, SHARES_OUTSTANDING, NET_CASHFLOW_OPS
+from fairvalue.constants import (
+    STATE_OF_INCORP_DICT,
+    DATE_FORMAT,
+    CAPITAL_EXPENDITURE,
+    FREE_CASHFLOW,
+    SHARES_OUTSTANDING,
+    NET_CASHFLOW_OPS,
+)
 
 
 def fetch_state_dict():
@@ -378,6 +385,7 @@ class SECFilings:
 # Functions used by pydantic models to ingest SEC filings
 # =============================================================================
 
+
 def cfacts_df_to_dict(df: pd.DataFrame) -> Dict[str, List]:
 
     company_facts = dict()
@@ -454,6 +462,17 @@ def secfiling_to_financials(sec_filing: SECFilings) -> pd.DataFrame:
 
     state_currency = "USD"
 
+    us_gaap = getattr(sec_filing.companyfacts.facts, "us_gaap", None)
+
+    if not us_gaap:
+        raise ParseException("Missing us_gaap data")
+    if not hasattr(us_gaap, "NetCashProvidedByUsedInOperatingActivities"):
+        raise ParseException("Missing NetCashProvidedByUsedInOperatingActivities data")
+    if not hasattr(us_gaap, "PaymentsToAcquirePropertyPlantAndEquipment"):
+        raise ParseException("Missing PaymentsToAcquirePropertyPlantAndEquipment data")
+    if not hasattr(us_gaap, "CommonStockSharesOutstanding"):
+        raise ParseException("Missing CommonStockSharesOutstanding data")
+
     operating_cashflows = sec_filing.companyfacts.facts.us_gaap.NetCashProvidedByUsedInOperatingActivities.units[
         state_currency
     ]
@@ -465,8 +484,11 @@ def secfiling_to_financials(sec_filing: SECFilings) -> pd.DataFrame:
     else:
         capital_expenditures = None
 
-    if "shares" not in sec_filing.companyfacts.facts.us_gaap.CommonStockSharesOutstanding.units:
-        raise ParseException("CommonStockSharesOutstanding missing from Companyfacts")
+    if (
+        "shares"
+        not in sec_filing.companyfacts.facts.us_gaap.CommonStockSharesOutstanding.units
+    ):
+        raise ParseException("shares missing from CommonStockSharesOutstanding")
 
     shares_outstanding = (
         sec_filing.companyfacts.facts.us_gaap.CommonStockSharesOutstanding.units[
@@ -486,6 +508,15 @@ def secfiling_to_financials(sec_filing: SECFilings) -> pd.DataFrame:
     if (
         sec_filing.companyfacts.facts.us_gaap.StockholdersEquityNoteStockSplitConversionRatio1
     ):
+
+        if (
+            "pure"
+            not in sec_filing.companyfacts.facts.us_gaap.StockholdersEquityNoteStockSplitConversionRatio1.units
+        ):
+            raise ParseException(
+                "pure missing from StockholdersEquityNoteStockSplitConversionRatio1"
+            )
+
         stock_split_conversions = sec_filing.companyfacts.facts.us_gaap.StockholdersEquityNoteStockSplitConversionRatio1.units[
             "pure"
         ]
@@ -498,43 +529,61 @@ def secfiling_to_financials(sec_filing: SECFilings) -> pd.DataFrame:
         stock_split_df["end_parsed"] = pd.to_datetime(stock_split_df["end"])
         stock_split_df = stock_split_df.sort_values(by=["end_parsed"])
 
-        for _, row_df in stock_split_df.iterrows():
-            nearest_date_index = nearest(
-                row_df["end_parsed"], shares_outstanding_df["end_parsed"]
-            )
-            shares_outstanding_df.loc[nearest_date_index, "stock_split"] = row_df[
+        # if stock split dates don't overlap with the shares outstanding dates, set all stock splits to 1
+        if len(stock_split_df) == 0:
+            shares_outstanding_df["stock_split"] = 1
+            shares_outstanding_df["stock_split_date"] = None
+
+        elif (
+            stock_split_df["end_parsed"].max()
+            < shares_outstanding_df["end_parsed"].min()
+        ):
+            shares_outstanding_df["stock_split"] = 1
+            shares_outstanding_df["stock_split_date"] = None
+
+        else:
+            for _, row_df in stock_split_df.iterrows():
+                nearest_date_index = nearest(
+                    row_df["end_parsed"], shares_outstanding_df["end_parsed"]
+                )
+
+                if nearest_date_index is None:
+                    continue
+
+                shares_outstanding_df.loc[nearest_date_index, "stock_split"] = row_df[
+                    "stock_split"
+                ]
+                shares_outstanding_df.loc[nearest_date_index, "stock_split_date"] = (
+                    row_df["end_parsed"]
+                )
+
+            shares_outstanding_df["stock_split_date"] = shares_outstanding_df[
+                "stock_split_date"
+            ].bfill()
+
+            shares_outstanding_df["stock_split"] = shares_outstanding_df[
                 "stock_split"
-            ]
-            shares_outstanding_df.loc[nearest_date_index, "stock_split_date"] = row_df[
-                "end_parsed"
-            ]
+            ].fillna(1)
+            shares_outstanding_df["stock_split"] = shares_outstanding_df["stock_split"][
+                ::-1
+            ].cumprod()[::-1]
 
-        shares_outstanding_df["stock_split_date"] = shares_outstanding_df[
-            "stock_split_date"
-        ].bfill()
-
-        shares_outstanding_df["stock_split"] = shares_outstanding_df[
-            "stock_split"
-        ].fillna(1)
-        shares_outstanding_df["stock_split"] = shares_outstanding_df["stock_split"][
-            ::-1
-        ].cumprod()[::-1]
-
-        # drop filings that are for financials before the stock split date but were filed after the stock split. In such cases the new filing contains shares outstanding after the split causing confusion.
-        shares_outstanding_df = shares_outstanding_df[
-            ~(
-                (
-                    shares_outstanding_df["end_parsed"]
-                    < shares_outstanding_df["stock_split_date"]
+            # drop filings that are for financials before the stock split date but were filed after the stock split. In such cases the new filing contains shares outstanding after the split causing confusion.
+            shares_outstanding_df = shares_outstanding_df[
+                ~(
+                    (
+                        shares_outstanding_df["end_parsed"]
+                        < shares_outstanding_df["stock_split_date"]
+                    )
+                    & (
+                        shares_outstanding_df["stock_split_date"]
+                        < shares_outstanding_df["filed_parsed"]
+                    )
                 )
-                & (
-                    shares_outstanding_df["stock_split_date"]
-                    < shares_outstanding_df["filed_parsed"]
-                )
-            )
-        ]
-    # else:
-    #     shares_outstanding_df["stock_split"] = 1
+            ]
+    else:
+        shares_outstanding_df["stock_split"] = 1
+        shares_outstanding_df["stock_split_date"] = None
 
     # deduplicating to keep the latest filed 10-k or 20-k after the exclusions above
     shares_outstanding_df = shares_outstanding_df[
@@ -598,7 +647,7 @@ def secfiling_to_financials(sec_filing: SECFilings) -> pd.DataFrame:
 
 
 def secfiling_to_annual_financials(
-    sec_filing: SECFilings, 
+    sec_filing: SECFilings,
     return_dataframe: bool = False,
     dates_as_string: bool = True,
 ) -> TickerFinancials | pd.DataFrame:
@@ -641,13 +690,13 @@ def secfiling_to_annual_financials(
     if return_dataframe:
         if dates_as_string:
             # Convert all datetime columns to strings using DATE_FORMAT
-            datetime_cols = ['end_parsed', 'filed_parsed', 'stock_split_date']
+            datetime_cols = ["end_parsed", "filed_parsed", "stock_split_date"]
             for col in datetime_cols:
                 if col in financials_df.columns:
                     financials_df[col] = financials_df[col].dt.strftime(DATE_FORMAT)
 
         return financials_df
-    
+
     financials = TickerFinancials(**cfacts_df_to_dict(financials_df))
 
     return financials

@@ -67,6 +67,7 @@ def get_logger(
 
     return logger
 
+
 logger = get_logger("ingestion")
 
 if __name__ == "__main__":
@@ -113,9 +114,9 @@ if __name__ == "__main__":
         except IndexError as e:
             logger.error("Failed to process file '%s' due to '%s'", file, e)
             continue
-        except KeyError as e:
-            logger.error("Failed to process file '%s' due to '%s'", file, e)
-            continue
+        # except KeyError as e:
+        #     logger.error("Failed to process file '%s' due to '%s'", file, e)
+        #     continue
         except json.JSONDecodeError as e:
             logger.error("Failed to process file '%s' due to '%s'", file, e)
             continue

@@ -1,7 +1,6 @@
 import pandas as pd
 
-from fairvalue._ingestion import datum_to_dataframe
-from fairvalue.models.sec_ingestion import Datum
+from fairvalue.models.sec_ingestion import Datum, datum_to_dataframe
 
 
 def test_datum_to_dataframe():
