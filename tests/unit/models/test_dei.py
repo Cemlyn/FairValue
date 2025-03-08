@@ -8,7 +8,7 @@ import pytest
 from pydantic import (
     ValidationError,
 )
-from fairvalue.models.ingestion import (
+from fairvalue.models.sec_ingestion import (
     Dei,
 )
 

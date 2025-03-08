@@ -23,14 +23,49 @@ downloaded from the sec website: http://www.sec.gov/Archives/edgar/daily-index/x
 
 import os
 import json
+import logging
+from logging import StreamHandler, FileHandler
 
 from pydantic import ValidationError
 
 from fairvalue.utils import load_json
-from fairvalue import secfiling_to_financials, ParseException
-from fairvalue.models.ingestion import CompanyFacts, Submissions, SECFilings
+from fairvalue import ParseException
+from fairvalue.models.sec_ingestion import CompanyFacts, Submissions, SECFilings
 
-from scripts.logger_conf import get_logger
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "time": self.formatTime(record),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger_name": record.name,
+        }
+        if record.exc_info:
+            log_record["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_record)
+
+
+def get_logger(
+    logger_name: str,
+    log_file: str = os.path.join("data", "ingestion_logs.jsonl"),
+    level=logging.INFO,
+):
+
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(level)
+
+    if not logger.hasHandlers():
+        formatter = JsonFormatter()
+        stream_handler = StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+        file_handler = FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    return logger
 
 logger = get_logger("ingestion")
 
@@ -56,13 +91,13 @@ if __name__ == "__main__":
             submissions_json = load_json(os.path.join(DIR, SUBMISSIONS, file))
             submission = Submissions(**submissions_json)
 
-            secfilling = SECFilings(companyfacts=companyfacts, submissions=submission)
+            sec_filing = SECFilings(companyfacts=companyfacts, submissions=submission)
 
             logger.info(f"Sucessfully processed file '%s'", file)
 
             # Pulling the data from the fillings needed to run a cashflow calculation
-            financials_df = secfiling_to_financials(sec_filing=secfilling)
-            financials_records = financials_df.to_dict(orient="records")
+            financials = sec_filing.to_annual_financials(return_dataframe=True)
+            financials_records = financials.to_dict(orient="records")
             for record in financials_records:
                 json_line = json.dumps(record)
                 with open(os.path.join(DIR, OUTPUT_FILE), "a", encoding="utf-8") as f:
@@ -73,6 +108,12 @@ if __name__ == "__main__":
             successful += 1
 
         except ParseException as e:
+            logger.error("Failed to process file '%s' due to '%s'", file, e)
+            continue
+        except IndexError as e:
+            logger.error("Failed to process file '%s' due to '%s'", file, e)
+            continue
+        except KeyError as e:
             logger.error("Failed to process file '%s' due to '%s'", file, e)
             continue
         except json.JSONDecodeError as e:

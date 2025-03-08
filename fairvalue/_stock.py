@@ -14,15 +14,12 @@ from fairvalue.models.financials import (
 )
 from fairvalue.models.base import Floats, Strs
 
-
-from fairvalue._ingestion import secfiling_to_annual_financials
-
 from fairvalue.constants import (
     DATE_FORMAT,
 )
 
 from fairvalue._exceptions import FairValueException
-from fairvalue.models.ingestion import SECFilingsModel
+from fairvalue.models.sec_ingestion import SECFilingsModel
 from fairvalue import utils
 
 
@@ -109,9 +106,9 @@ class Stock:
             # Create minimal TickerFinancials with just shares outstanding
             self.financials = None
 
-    def _initialize_from_sec_filing(self, sec_filing):
+    def _initialize_from_sec_filing(self, sec_filing: SECFilingsModel):
         """Initialize stock attributes from SEC filing data.
-
+        
         Args:
             sec_filing (SECFilingsModel): SEC filing data model
         """
@@ -139,7 +136,7 @@ class Stock:
             self.date_of_latest_filing = None
             self.is_potentially_delisted = None
 
-        self.financials = secfiling_to_annual_financials(sec_filing=sec_filing)
+        self.financials = sec_filing.to_annual_financials()
 
     def predict_fairvalue(
         self,

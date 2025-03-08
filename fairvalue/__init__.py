@@ -3,4 +3,3 @@ from ._stock import (
 )
 
 from ._exceptions import ParseException
-from ._ingestion import secfiling_to_financials

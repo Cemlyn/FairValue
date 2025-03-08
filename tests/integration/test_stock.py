@@ -1,7 +1,7 @@
 import pytest
 
 from fairvalue import Stock
-from fairvalue.models.ingestion import SECFilings
+from fairvalue.models.sec_ingestion import SECFilings
 from fairvalue.models.financials import ForecastTickerFinancials
 
 

@@ -1,5 +1,5 @@
 import pytest
-from fairvalue.models.ingestion import SECFilings
+from fairvalue.models.sec_ingestion import SECFilings
 
 
 @pytest.mark.parametrize("company", ["AAPL", "NVDA"])

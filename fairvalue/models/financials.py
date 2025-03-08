@@ -42,6 +42,10 @@ class TickerFinancials(BaseModel):
 
     shares_outstanding: List[NonNegInt] = Field(description="Shares outstanding.")
 
+    def to_dict(self):
+        """Convert model to dictionary, maintaining backward compatibility."""
+        return self.model_dump()
+
     @model_validator(mode="before")
     def validate_data(cls, model):
 

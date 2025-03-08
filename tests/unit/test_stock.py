@@ -2,7 +2,7 @@ import pytest
 from typing import get_type_hints, Union, Literal, Dict, Any
 
 from fairvalue import Stock
-from fairvalue.models.ingestion import SECFilingsModel
+from fairvalue.models.sec_ingestion import SECFilingsModel
 from fairvalue.models.financials import ForecastTickerFinancials
 from fairvalue._exceptions import FairValueException
 
