@@ -68,11 +68,8 @@ if __name__ == "__main__":
     df = df.drop_duplicates(subset=["cik", "end_parsed", "filed_parsed"], keep="last")
     df = df.drop_duplicates(subset=["cik", "end_year"], keep="last")
 
-    count = 0
     stocks = []
     for cik_id, cik_df in df.groupby("cik"):
-
-        count += 1
 
         try:
             historical_finances = cfacts_df_to_dict(cik_df)
@@ -81,15 +78,13 @@ if __name__ == "__main__":
                 ticker_id=cik_df.loc[:, "ticker"].iloc[0],
                 exchange=cik_df.loc[:, "exchange"].iloc[0],
                 cik=str(cik_df.loc[:, "cik"].iloc[0]),
-                latest_shares_outstanding=cik_df.loc[
-                    :, "latest_shares_outstanding"
-                ].iloc[0],
+                latest_shares_outstanding=cik_df.loc[:, "shares_outstanding"].iloc[-1],
                 entity_name=cik_df.loc[:, "entityName"].iloc[0],
                 historical_financials=historical_finances,
             )
 
             intrinsic_value = stock.predict_fairvalue(
-                growth_rate=0.0,
+                growth_rate=0.02,
                 discounting_rate=0.05,
                 number_of_years=10,
                 historical_features=True,

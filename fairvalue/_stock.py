@@ -291,6 +291,9 @@ def calc_intrinsic_value(
 
     response = {}
     response["shares_outstanding"] = shares_outstanding
+    response["starting_fcf"] = free_cashflows[0]
+    response["present_value_fcf"] = present_value_fcf
+    response["present_value_terminal"] = present_value_terminal
     response["company_value"] = company_value
 
     intrinsic_value = np.where(
