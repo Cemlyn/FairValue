@@ -6,7 +6,7 @@ from typing import List, Optional, Literal, Dict
 import pandas as pd
 from pydantic import BaseModel, Field, field_validator
 
-from fairvalue.models.financials import TickerFinancials
+from fairvalue.models.financials import TickerFinancialsAnnual
 from fairvalue._exceptions import ParseException
 from fairvalue.models.utils import validate_date
 from fairvalue.constants import (
@@ -370,12 +370,12 @@ class SECFilings:
         """Returns the string representation of the TargetModel instance."""
         return repr(self._instance)
 
-    def to_annual_financials(self, return_dataframe=False) -> TickerFinancials:
+    def to_annual_financials(self, return_dataframe=False) -> TickerFinancialsAnnual:
         """
         Transform SEC filing data into annual financial metrics.
 
         Returns:
-            TickerFinancials: Annual financial metrics model
+            TickerFinancialsAnnual: Annual financial metrics model
         """
 
         return secfiling_to_annual_financials(self, return_dataframe=return_dataframe)
@@ -650,8 +650,9 @@ def secfiling_to_annual_financials(
     sec_filing: SECFilings,
     return_dataframe: bool = False,
     dates_as_string: bool = True,
-) -> TickerFinancials | pd.DataFrame:
-    """Transform SEC filing data into annual financial metrics.
+) -> TickerFinancialsAnnual | pd.DataFrame:
+    """
+    Transform SEC filing data into annual financial metrics.
 
     Args:
         sec_filing (SECFilings): SEC filing data
@@ -659,7 +660,7 @@ def secfiling_to_annual_financials(
         dates_as_string (bool, optional): Whether to return dates as strings or datetime objects. Defaults to True.
 
     Returns:
-        Union[TickerFinancials, pd.DataFrame]: Financial data either as a TickerFinancials model or DataFrame
+        Union[TickerFinancialsAnnual, pd.DataFrame]: Financial data either as a TickerFinancialsAnnual model or DataFrame
     """
 
     financials_df = secfiling_to_financials(sec_filing=sec_filing)
@@ -697,7 +698,7 @@ def secfiling_to_annual_financials(
 
         return financials_df
 
-    financials = TickerFinancials(**cfacts_df_to_dict(financials_df))
+    financials = TickerFinancialsAnnual(**cfacts_df_to_dict(financials_df))
 
     return financials
 

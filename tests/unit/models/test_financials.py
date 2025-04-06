@@ -4,7 +4,7 @@ import datetime
 from pydantic import ValidationError
 
 from fairvalue.models.financials import (
-    TickerFinancials,
+    TickerFinancialsAnnual,
     fetch_latest_financials,
     latest_index,
 )
@@ -17,7 +17,7 @@ def test_invalid_ticker_no_capex():
     with pytest.raises(
         ValidationError,
     ):
-        TickerFinancials(
+        TickerFinancialsAnnual(
             operating_cashflows=[-10.0, 10.0, -10.2, 1.4, 20.2],
             year_end_dates=[
                 "2020-01-01",
@@ -33,7 +33,7 @@ def test_invalid_ticker_no_capex():
 def test_valid_ticker_incl_capex():
 
     try:
-        TickerFinancials(
+        TickerFinancialsAnnual(
             operating_cashflows=[-10.0, 10.0, -10.0, 10.0, 20.0],
             year_end_dates=[
                 "2020-01-01",
@@ -54,7 +54,7 @@ def test_invalid_ticker_missing_ops_cashflow():
     with pytest.raises(
         ValidationError,
     ):
-        TickerFinancials(
+        TickerFinancialsAnnual(
             year_end_dates=[
                 "2020-01-01",
                 "2021-01-01",
@@ -164,7 +164,7 @@ def test_latest_invalid2():
 
 def test_latest_financials():
 
-    financials = TickerFinancials(
+    financials = TickerFinancialsAnnual(
         year_end_dates=["2018-01-01", "2019-01-01", "2020-01-01"],
         free_cashflows=[-110, 10, 300],
         shares_outstanding=[10, 100, 100],
@@ -178,7 +178,7 @@ def test_latest_financials():
     assert output.free_cashflows is not None
     assert len(output.year_end_dates) == 2
 
-    financials = TickerFinancials(
+    financials = TickerFinancialsAnnual(
         year_end_dates=["2018-01-01", "2019-01-01", "2020-01-01"],
         free_cashflows=[-110, 10, 300],
         capital_expenditures=[1, 1, 1],
@@ -192,7 +192,7 @@ def test_latest_financials():
     assert output.shares_outstanding is not None
     assert output.free_cashflows is not None
 
-    financials = TickerFinancials(
+    financials = TickerFinancialsAnnual(
         year_end_dates=["2018-01-01", "2019-01-01", "2020-01-01"],
         free_cashflows=[-110, 10, 300],
         capital_expenditures=[1, 1, 1],
@@ -207,7 +207,7 @@ def test_latest_financials():
     assert output.shares_outstanding is not None
     assert output.free_cashflows is not None
 
-    financials = TickerFinancials(
+    financials = TickerFinancialsAnnual(
         year_end_dates=["2018-01-01", "2019-01-01", "2020-01-01"],
         capital_expenditures=[1, 1, 1],
         operating_cashflows=[10, 10, 10],
@@ -221,7 +221,7 @@ def test_latest_financials():
     assert output.shares_outstanding is not None
     assert output.free_cashflows is not None
 
-    financials = TickerFinancials(
+    financials = TickerFinancialsAnnual(
         year_end_dates=["2018-01-01", "2019-01-01", "2020-01-01"],
         free_cashflows=[-110, 10, 300],
         shares_outstanding=[10, 100, 100],

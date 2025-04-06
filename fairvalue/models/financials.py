@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 from typing import Optional, List
 
 from pydantic import (
@@ -101,6 +102,90 @@ class TickerFinancials(BaseModel):
             model.free_cashflows = free_cashflows
 
         return model
+
+
+class TickerFinancialsAnnual(TickerFinancials):
+    @model_validator(mode="before")
+    def validate_annual_frequency(cls, model):
+        parsed_dates = [
+            datetime.datetime.strptime(date, DATE_FORMAT)
+            for date in model["year_end_dates"]
+        ]
+        parsed_dates.sort()
+        deltas = [(b - a).days for a, b in zip(parsed_dates, parsed_dates[1:])]
+
+        # Check if the majority of deltas are around 365 ± 30 days
+        if not all(335 <= delta <= 395 for delta in deltas):
+            raise ValueError(
+                "year_end_dates must be roughly annual (365±30 days apart)"
+            )
+
+        return model
+
+
+class TickerFinancialsQuarterly(TickerFinancials):
+    @model_validator(mode="before")
+    def validate_quarterly_frequency(cls, model):
+        parsed_dates = [
+            datetime.datetime.strptime(date, DATE_FORMAT)
+            for date in model["year_end_dates"]
+        ]
+        parsed_dates.sort()
+        deltas = [(b - a).days for a, b in zip(parsed_dates, parsed_dates[1:])]
+
+        if not all(75 <= delta <= 105 for delta in deltas):
+            raise ValueError(
+                "year_end_dates must be roughly quarterly (90±15 days apart)"
+            )
+
+        return model
+
+    def to_annual(self) -> TickerFinancialsAnnual:
+        annual_data = defaultdict(
+            lambda: {
+                "operating_cashflows": 0.0,
+                "capital_expenditures": 0.0,
+                "free_cashflows": 0.0,
+                "shares_outstanding": 0,
+                "latest_date": None,
+            }
+        )
+
+        for i, date_str in enumerate(self.year_end_dates):
+            dt = datetime.datetime.strptime(date_str, DATE_FORMAT)
+            year = dt.year
+
+            annual_data[year]["operating_cashflows"] += (
+                self.operating_cashflows[i] if self.operating_cashflows else 0
+            )
+            annual_data[year]["capital_expenditures"] += (
+                self.capital_expenditures[i] if self.capital_expenditures else 0
+            )
+            annual_data[year]["free_cashflows"] += (
+                self.free_cashflows[i] if self.free_cashflows else 0
+            )
+
+            # Keep the latest quarter in the year for shares and date
+            if (
+                annual_data[year]["latest_date"] is None
+                or dt > annual_data[year]["latest_date"]
+            ):
+                annual_data[year]["shares_outstanding"] = self.shares_outstanding[i]
+                annual_data[year]["latest_date"] = dt
+
+        # Sort by year
+        years = sorted(annual_data.keys())
+        return TickerFinancialsAnnual(
+            year_end_dates=[
+                annual_data[y]["latest_date"].strftime(DATE_FORMAT) for y in years
+            ],
+            operating_cashflows=[annual_data[y]["operating_cashflows"] for y in years],
+            capital_expenditures=[
+                annual_data[y]["capital_expenditures"] for y in years
+            ],
+            free_cashflows=[annual_data[y]["free_cashflows"] for y in years],
+            shares_outstanding=[annual_data[y]["shares_outstanding"] for y in years],
+        )
 
 
 class ForecastTickerFinancials(BaseModel):

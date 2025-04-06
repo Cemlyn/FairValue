@@ -73,7 +73,7 @@ financials = {
 }
 
 # Create stock and calculate fair value
-stock = Stock(ticker_id='AAPL', historical_financials=financials)
+stock = Stock(ticker_id='AAPL', annual_financials=financials)
 valuation = stock.predict_fairvalue(
     growth_rate=0.02,
     number_of_years=10,

@@ -8,7 +8,8 @@ from fairvalue.utils import (
     RoundedDict,
 )
 from fairvalue.models.financials import (
-    TickerFinancials,
+    TickerFinancialsAnnual,
+    TickerFinancialsQuarterly,
     ForecastTickerFinancials,
     fetch_latest_financials,
 )
@@ -32,8 +33,8 @@ class Stock:
         cik: str | None = None,
         latest_shares_outstanding: int | None = None,
         entity_name: str | None = None,
-        historical_financials: Dict[str, Any] | None = None,
-        sec_filing: SECFilingsModel | None = None,
+        annual_financials: Dict[str, Any] | None = None,
+        quarterly_financials: Dict[str, Any] | None = None,
     ):
         """
         Initialize the Stock class with either SEC filing data or user-defined data.
@@ -44,99 +45,49 @@ class Stock:
             cik (str, optional): SEC Central Index Key
             latest_shares_outstanding (int, optional): Most recent shares outstanding
             entity_name (str, optional): Company name
-            historical_financials (Dict, optional): User-provided financial data
+            annual_financials (Dict, optional): User-provided financial data
             sec_filing (SECFilingsModel, optional): SEC filing data model
         """
-        if sec_filing:
-            self._initialize_from_sec_filing(sec_filing)
-        else:
-            self._initialize_from_user_defined(
-                ticker_id=ticker_id,
-                exchange=exchange,
-                cik=cik,
-                entity_name=entity_name,
-                latest_shares_outstanding=latest_shares_outstanding,
-                historical_financials=historical_financials,
+
+        if (annual_financials is not None) and (quarterly_financials is not None):
+            raise FairValueException(
+                "annual_financials and quarterly_financials cannot both be provided"
             )
+
+        elif annual_financials is not None:
+            quarterly_financials = None
+            annual_financials = TickerFinancialsAnnual(**annual_financials)
+
+        elif quarterly_financials is not None:
+            quarterly_financials = TickerFinancialsQuarterly(**quarterly_financials)
+            annual_financials = quarterly_financials.to_annual_financials()
+
+        else:
+            quarterly_financials = None
+            annual_financials = None
+
+        self.financials = annual_financials
+        self.quarterly_financials = quarterly_financials
+
+        if ticker_id is None:
+            raise FairValueException("Arg 'ticker_id' cannot be None.")
+        self.ticker_id = ticker_id
+
+        self.exchange = exchange
+        self.cik = cik
+        self.entity_name = entity_name
+
+        if latest_shares_outstanding is None and annual_financials is None:
+            raise FairValueException(
+                "Args 'latest_shares_outstanding' and 'annual_financials' cannot both be None"
+            )
+        self.latest_shares_outstanding = latest_shares_outstanding
 
         # Set shares outstanding after initialization
         if latest_shares_outstanding is None:
             self.latest_shares_outstanding = self.financials.shares_outstanding[-1]
         else:
             self.latest_shares_outstanding = latest_shares_outstanding
-
-    def _initialize_from_user_defined(
-        self,
-        ticker_id: str | None,
-        exchange: Literal["NYSE", "CBOE", "NASDAQ"] | None,
-        cik: str | None,
-        entity_name: str | None,
-        latest_shares_outstanding: int | None,
-        historical_financials: Dict[str, Any] | None,
-    ):
-        """Initialize stock attributes from user-defined data.
-
-        Args:
-            ticker_id (str): Stock ticker symbol
-            exchange (str): Stock exchange
-            cik (str): SEC Central Index Key
-            entity_name (str): Company name
-            latest_shares_outstanding (int): Number of shares outstanding
-            historical_financials (Dict): User-provided financial data
-
-        Raises:
-            FairValueException: If required data is missing
-        """
-        if ticker_id is None:
-            raise FairValueException("ticker_id must be provided if sec_filing is None")
-
-        self.ticker_id = ticker_id
-        self.exchange = exchange
-        self.cik = cik
-        self.entity_name = entity_name
-
-        if (historical_financials is None) and (latest_shares_outstanding is None):
-            raise FairValueException(
-                "latest_shares_outstanding or historical_financials cannot both be None"
-            )
-
-        if historical_financials is not None:
-            self.financials = TickerFinancials(**historical_financials)
-        else:
-            # Create minimal TickerFinancials with just shares outstanding
-            self.financials = None
-
-    def _initialize_from_sec_filing(self, sec_filing: SECFilingsModel):
-        """Initialize stock attributes from SEC filing data.
-
-        Args:
-            sec_filing (SECFilingsModel): SEC filing data model
-        """
-        ticker_dict = dict(
-            zip(sec_filing.submissions.tickers, sec_filing.submissions.exchanges)
-        )
-        shortest_key = min(ticker_dict, key=len)
-        self.ticker_id = shortest_key
-        self.exchange = ticker_dict[shortest_key]
-        self.entity_name = sec_filing.companyfacts.entityName
-        self.cik = sec_filing.companyfacts.cik
-
-        if (
-            hasattr(sec_filing, "date_of_latest_filing")
-            and sec_filing.date_of_latest_filing is not None
-        ):
-            self.days_since_filing = (
-                datetime.datetime.now().date()
-                - datetime.datetime.strptime(
-                    sec_filing.date_of_latest_filing, DATE_FORMAT
-                ).date()
-            ).days
-            self.is_potentially_delisted = self.days_since_filing > 365
-        else:
-            self.date_of_latest_filing = None
-            self.is_potentially_delisted = None
-
-        self.financials = sec_filing.to_annual_financials()
 
     def predict_fairvalue(
         self,
@@ -308,7 +259,7 @@ def calc_intrinsic_value(
     return response
 
 
-def calc_historical_features(financials: TickerFinancials = None) -> dict:
+def calc_historical_features(financials: TickerFinancialsAnnual = None) -> dict:
 
     features = dict()
 

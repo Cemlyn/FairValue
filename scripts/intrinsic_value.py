@@ -75,12 +75,11 @@ if __name__ == "__main__":
             historical_finances = cfacts_df_to_dict(cik_df)
 
             stock = Stock(
-                ticker_id=cik_df.loc[:, "ticker"].iloc[0],
-                exchange=cik_df.loc[:, "exchange"].iloc[0],
-                cik=str(cik_df.loc[:, "cik"].iloc[0]),
-                latest_shares_outstanding=cik_df.loc[:, "shares_outstanding"].iloc[-1],
-                entity_name=cik_df.loc[:, "entityName"].iloc[0],
-                historical_financials=historical_finances,
+                ticker_id="AAPL",
+                exchange="NASDAQ",
+                entity_name="Apple Inc.",
+                latest_shares_outstanding=1000000,
+                annual_financials=historical_finances,
             )
 
             intrinsic_value = stock.predict_fairvalue(

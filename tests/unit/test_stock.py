@@ -14,7 +14,7 @@ def test_stock_invalid_initialization_no_ticker():
     """
     with pytest.raises(
         FairValueException,
-        match="ticker_id must be provided if sec_filing is None",
+        match="Arg 'ticker_id' cannot be None.",
     ):
 
         historical_finances = {
@@ -30,7 +30,7 @@ def test_stock_invalid_initialization_no_ticker():
             cik="123ABC",
             latest_shares_outstanding=3200,
             entity_name="test corp",
-            historical_financials=historical_finances,
+            annual_financials=historical_finances,
         )
 
 
@@ -41,7 +41,7 @@ def test_stock_invalid_initialization_no_financials():
     """
     with pytest.raises(
         FairValueException,
-        match="latest_shares_outstanding or historical_financials cannot both be None",
+        match="Args 'latest_shares_outstanding' and 'annual_financials' cannot both be None",
     ):
 
         Stock(
@@ -71,11 +71,11 @@ def test_stock_init_type_hints():
     ), "latest_shares_outstanding should be int or None"
     assert hints["entity_name"] == Union[str, None], "entity_name should be str or None"
     assert (
-        hints["historical_financials"] == Union[Dict[str, Any], None]
-    ), "historical_financials should be a dict or None"
+        hints["annual_financials"] == Union[Dict[str, Any], None]
+    ), "annual_financials should be a dict or None"
     assert (
-        hints["sec_filing"] == Union[SECFilingsModel, None]
-    ), "sec_filing should be SECFilingsModel or None"
+        hints["quarterly_financials"] == Union[Dict[str, Any], None]
+    ), "quarterly_financials should be a dict or None"
 
 
 def test_stock_predict_fairvalue_type_hints():

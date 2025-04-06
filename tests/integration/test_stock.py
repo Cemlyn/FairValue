@@ -1,50 +1,7 @@
 import pytest
 
 from fairvalue import Stock
-from fairvalue.models.sec_ingestion import SECFilings
 from fairvalue.models.financials import ForecastTickerFinancials
-
-
-# =============================================================================
-# SEC Filing Initialization Tests
-# =============================================================================
-
-
-@pytest.mark.parametrize("company", ["AAPL", "NVDA"])
-def test_stock_initialization_with_sec_filing(company, sec_data):
-    """
-    Test that no errors are raised when initialising a stock with an SECFilings arg
-    and correct financials are extracted from the SECFilings object.
-    """
-    sec_filling = SECFilings(
-        companyfacts=sec_data["company_facts"], submissions=sec_data["submissions"]
-    )
-    stock = Stock(sec_filing=sec_filling)
-
-    assert stock.ticker_id == company
-    assert stock.cik == sec_filling.companyfacts.cik
-    assert stock.entity_name == sec_filling.companyfacts.entityName
-
-    reconciliation_file = sec_data["reconciliation-file"]
-
-    assert (
-        stock.financials.capital_expenditures
-        == reconciliation_file["capital_expenditures"]
-    )
-    assert (
-        stock.financials.shares_outstanding == reconciliation_file["shares_outstanding"]
-    )
-    assert stock.financials.year_end_dates == reconciliation_file["year_end_dates"]
-    assert (
-        stock.financials.operating_cashflows == reconciliation_file["net_ops_cashflows"]
-    )
-    assert stock.financials.free_cashflows == reconciliation_file["free_cashflows"]
-
-    result = stock.predict_fairvalue()
-
-    assert isinstance(result, dict)
-    assert "intrinsic_value" in result
-    assert isinstance(result["intrinsic_value"], float)
 
 
 # =============================================================================
@@ -71,7 +28,7 @@ def test_stock_initialization_with_user_financials():
         cik="123ABC",
         latest_shares_outstanding=3200,
         entity_name="test corp",
-        historical_financials=historical_finances,
+        annual_financials=historical_finances,
     )
 
     assert stock.ticker_id == "TEST"
@@ -100,7 +57,7 @@ def test_stock_initialization_with_user_financials_fcf_only():
         cik="123ABC",
         latest_shares_outstanding=3200,
         entity_name="test corp",
-        historical_financials=historical_finances,
+        annual_financials=historical_finances,
     )
 
     assert stock.ticker_id == "TEST"
@@ -128,7 +85,7 @@ def test_stock_initialization_with_user_financials_no_fcf():
         cik="123ABC",
         latest_shares_outstanding=3200,
         entity_name="test corp",
-        historical_financials=historical_finances,
+        annual_financials=historical_finances,
     )
 
     assert stock.ticker_id == "TEST"
