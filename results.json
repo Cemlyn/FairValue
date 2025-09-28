@@ -1,0 +1,682 @@
+{
+    "directory": ".\\fairvalue\\_stock_split_parser\\data",
+    "regex_pattern": "8K-.*\\.txt\\.gz",
+    "model": "mistral:latest",
+    "timestamp": "2025-09-28T11:48:24.116522",
+    "total_files_processed": 51,
+    "results": [
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-02-13-0001045810-20-000007.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:48.262137",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-03-10-0001045810-20-000033.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:48.289586",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-04-17-0001045810-20-000048.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:48.312224",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-04-27-0001045810-20-000052.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:48.335688",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-05-21-0001045810-20-000063.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:48.416779",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-06-15-0001045810-20-000103.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:52.818696",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "3-for-2",
+                    "date": "2007-09-10",
+                    "confidence": 1,
+                    "evidence": "Plan. 1 The initial 101,845,177 shares approved in June 2007 were adjusted to 152,767,766 pursuant to a 3-for-2 forward stock split effective September 10, 2007. (b) Incentive Stock Option Limit. Subject to the 2007 Plan Reserve and the provisions of ",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-06-15-0001045810-20-000103.txt.gz",
+                    "normalized_ratio": "3:2",
+                    "normalized_date": "2007-09-10"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-07-13-0001045810-20-000127.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:52.844092",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-08-19-0001045810-20-000145.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:52.932128",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-11-09-0001045810-20-000181.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:52.954488",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2020-11-18-0001045810-20-000187.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:53.050445",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-02-24-0001045810-21-000007.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:53.135499",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-03-19-0001045810-21-000034.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:53.163685",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-04-12-0001045810-21-000047.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:46:53.188004",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-05-21-0001045810-21-000056.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:01.528615",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": null,
+                    "confidence": 1,
+                    "evidence": "rectors of NVIDIA Corporation, or the Company, declared a four-for-one split of Company's common stock in the form of a stock dividend, conditioned on obtaining stockholder approval at the Company's 2021 Annual Meeting of Stockholders to be held on June ",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-05-21-0001045810-21-000056.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": null
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-06-03",
+                    "confidence": 1,
+                    "evidence": "the undersigned hereunto duly authorized. EX-99.1 2 pr-may2021.htm PRESS RELEASE Document NVIDIA Announces Four-for-One Stock Split, Pending Stockholder Approval at Annual Meeting Set for June 3 SANTA CLARA, Calif. \u2015 May 21, 2021 \u2015 NVIDIA today announced that its board of directors declared a four-for-one split of NVIDIA's common stock in the form of a stock dividend to make stock ownership more accessible to investors and employees. The stock dividend is conditioned on obtaining stoc",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-05-21-0001045810-21-000056.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-06-03"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "not specified",
+                    "date": "2021-07-19",
+                    "confidence": 0.95,
+                    "evidence": "ld on the record date, to be distributed after the close of trading on July 19, 2021. Trading is expected to begin on a stock split-adjusted basis on July 20. NVIDIA's 2021 Annual Meeting of Stockholders will take place virtually at www.virtualshareho",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-05-21-0001045810-21-000056.txt.gz",
+                    "normalized_ratio": null,
+                    "normalized_date": "2021-07-19"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-05-26-0001045810-21-000063.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:07.357491",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-06-03",
+                    "confidence": 1,
+                    "evidence": " 2021, the company's board of directors declared a four-for-one split of NVIDIA's common stock payable in the form of a stock dividend, with the additional shares expected to be distributed on July 19, 2021. The stock dividend is conditioned on obtaining stockholder approval at the company's 2021 Annual Meeting of Stockholders on June 3, 2021, ",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-05-26-0001045810-21-000063.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-06-03"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "On May 21, 2021, the Board of Directors declared a four-for-one split of NVIDIA's common stock payable in the form of a stock dividend, with the additional shares expected to be distributed on July 19, 2021. The stock dividend is conditioned on obtaining stockholder approval at our 2021 Annual Meeting of Stockholders on June 3, 2021 to increase",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-05-26-0001045810-21-000063.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-06-07-0001045810-21-000075.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:07.389833",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-06-28-0001045810-21-000117.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:07.410937",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-08-18-0001045810-21-000128.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:16.191160",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-06-21",
+                    "confidence": 1,
+                    "evidence": "on September 1, 2021. On July 19, 2021, the company completed a four-for-one split of its common stock in the form of a stock dividend to shareholders of record as of June 21, 2021. All share and per share amounts presented have been retroactively adjusted to reflect the stock split. Q2 Fiscal 2022 Summary NVIDIA's outlook for the third quarter of fiscal 2022 is as follows: \u2022 Revenue is expected to b",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-08-18-0001045810-21-000128.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-06-21"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "ONDENSED CONSOLIDATED STATEMENTS OF INCOME (In millions, except per share data) (Unaudited) (A) Reflects a four-for-one stock split on July 19, 2021. EX-99.2 3 q2fy22cfocommentary.htm Q2FY22 CFO COMMENTARY Document CFO Commentary on Second Quarter Fis",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-08-18-0001045810-21-000128.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-06-21",
+                    "confidence": 1,
+                    "evidence": "Visualization, and Automotive. On July 19, 2021, we completed a four-for-one split of our common stock in the form of a stock dividend to shareholders of record as of June 21, 2021. All share and per share amounts presented herein have been retroactively adjusted to reflect the stock split. Revenue Revenue for the second quarter was a record $6.51 billion, up 68 percent from a year earlier. Record quarterly",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-08-18-0001045810-21-000128.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-06-21"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-11-17-0001045810-21-000160.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:24.904881",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "iscal 2022 Summary *All per share amounts presented herein have been retroactively adjusted to reflect the four-for-one stock split which was effective July 19, 2021. NVIDIA's outlook for the fourth quarter of fiscal 2022 is as follows: \u2022 Revenue is e",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-11-17-0001045810-21-000160.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "ONDENSED CONSOLIDATED STATEMENTS OF INCOME (In millions, except per share data) (Unaudited) (A) Reflects a four-for-one stock split on July 19, 2021. EX-99.2 3 q3fy22cfocommentary.htm Q3FY22 CFO COMMENTARY Document CFO Commentary on Third Quarter Fisc",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-11-17-0001045810-21-000160.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                },
+                {
+                    "found": true,
+                    "type": "reverse",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "on, and Automotive. All per share amounts presented herein have been retroactively adjusted to reflect our four-for-one stock split which was effective July 19, 2021. Revenue Revenue for the third quarter was a record $7.10 billion, up 50 percent from",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2021-11-17-0001045810-21-000160.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-02-08-0001045810-22-000005.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:24.928201",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-02-16-0001045810-22-000008.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:30.721484",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-20",
+                    "confidence": 1,
+                    "evidence": " 3, 2022. Q4 Fiscal 2022 Summary *All per share amounts presented herein have been adjusted to reflect the four-for-one stock split, which was effective July 2021. Fiscal 2022 Summary *All per share amounts presented herein have been adjusted to reflect the four-for-one stock split, which was effective July 2021. Termination of the Arm Share Purchase Agreement On February 8, 2022, NVIDIA and SoftBan",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-02-16-0001045810-22-000008.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-20"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "ONDENSED CONSOLIDATED STATEMENTS OF INCOME (In millions, except per share data) (Unaudited) (A) Reflects a four-for-one stock split on July 19, 2021. EX-99.2 3 q4fy22cfocommentary.htm Q4FY22 CFO COMMENTARY Document CFO Commentary on Fourth Quarter and",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-02-16-0001045810-22-000008.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-03-09-0001045810-22-000023.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:30.776063",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-05-25-0001045810-22-000073.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:33.777089",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "ONDENSED CONSOLIDATED STATEMENTS OF INCOME (In millions, except per share data) (Unaudited) (A) Reflects a four-for-one stock split on July 19, 2021. EX-99.2 3 q1fy23cfocommentary.htm Q1FY23 CFO COMMENTARY Document CFO Commentary on First Quarter Fisc",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-05-25-0001045810-22-000073.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-06-06-0001045810-22-000088.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:39.612962",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "4-for-1",
+                    "date": "2021-07-19",
+                    "confidence": 1,
+                    "evidence": "ved at the Company's 2020 Annual Meeting of Stockholders, (vii) 733,103,298 shares that were added to reflect a 4-for-1 stock split effective July 19, 2021, and (viii) 51,500,000 shares that were approved at the Company's 2022 Annual Meeting of Stockh",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-06-06-0001045810-22-000088.txt.gz",
+                    "normalized_ratio": "4:1",
+                    "normalized_date": "2021-07-19"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "3 to 2",
+                    "date": "2007-09-10",
+                    "confidence": 1,
+                    "evidence": "r ___________ 1 The initial 101,845,177 shares approved in June 2007 were adjusted to 152,767,766 pursuant to a 3-for-2 stock split effective September 10, 2007. repurchase caused by the failure to meet a contingency or condition required for the vest",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-06-06-0001045810-22-000088.txt.gz",
+                    "normalized_ratio": "3:2",
+                    "normalized_date": "2007-09-10"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-08-08-0001045810-22-000133.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:39.640362",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-08-24-0001045810-22-000136.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:39.722195",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-08-31-0001045810-22-000146.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:39.743373",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-09-01-0001045810-22-000151.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:39.765125",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2022-11-16-0001045810-22-000163.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:39.864026",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-02-22-0001045810-23-000014.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:39.952225",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-03-08-0001045810-23-000039.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.001961",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-05-24-0001045810-23-000087.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.096820",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-06-27-0001045810-23-000146.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.121594",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-07-24-0001045810-23-000164.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.142427",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-08-23-0001045810-23-000171.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.222213",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-10-17-0001045810-23-000217.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.243356",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-10-24-0001045810-23-000221.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.279211",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2023-11-21-0001045810-23-000225.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.357564",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-02-21-0001045810-24-000028.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.440378",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-03-14-0001045810-24-000069.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:40.489310",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-05-22-0001045810-24-000113.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:51.854968",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-05-22",
+                    "confidence": 1,
+                    "evidence": "poration language in such filing. Item 8.01. Other Events. On May 22, 2024, the Company announced a ten-for-one forward stock split, or the Stock Split, of the Company's issued common stock to be effected through the filing of an amendment to the Company's Restated Certi",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-05-22-0001045810-24-000113.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-05-22"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": null,
+                    "date": "2024-06-06",
+                    "confidence": 1,
+                    "evidence": "mendment will result in a proportionate increase in the number of shares of authorized common stock. As a result of the Stock Split, each record holder of common stock as of the close of market on Thursday, June 6, 2024 will receive nine additional sh",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-05-22-0001045810-24-000113.txt.gz",
+                    "normalized_ratio": null,
+                    "normalized_date": "2024-06-06"
+                },
+                {
+                    "found": false,
+                    "type": "unknown",
+                    "ratio": null,
+                    "date": null,
+                    "confidence": 1,
+                    "evidence": "m $0.04 per share to $0.10 per share of common stock. The increased dividend is equivalent to $0.01 per share on a post-Stock Split basis and will be paid on Friday, June 28, 2024, to all shareholders of record on Tuesday, June 11, 2024. Item 9.01. Fi",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-05-22-0001045810-24-000113.txt.gz",
+                    "normalized_ratio": null,
+                    "normalized_date": null
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "Record quarterly Data Center revenue of $22.6 billion, up 23% from Q4 and up 427% from a year ago \u2022 Ten-for-one forward stock split effective June 7, 2024 \u2022 Quarterly cash dividend raised 150% to $0.01 per share on a post-split basis SANTA CLARA, Cali",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-05-22-0001045810-24-000113.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-06-07-0001045810-24-000144.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:54.750412",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-05-22",
+                    "confidence": 1,
+                    "evidence": "nt to Certificate of Incorporation On May 22, 2024, NVIDIA Corporation, or the Company, announced a ten-for-one forward stock split, or the Stock Split, of the Company's issued common stock to be effected through the filing of an amendment to the Company's Restated Certi",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-06-07-0001045810-24-000144.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-05-22"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-07-02-0001045810-24-000206.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:47:57.646857",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "ted. The record date for the 2024 Annual Meeting was April 29, 2024, which preceded the date of our ten-for-one forward stock split effected on June 7, 2024, and therefore the final voting results reported below are on a pre-stock split basis. 1.\u00a0\u00a0\u00a0\u00a0Stockholders approved the election of each of our twelve (12) director nominees to hold office until the 2",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-07-02-0001045810-24-000206.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-08-28-0001045810-24-000262.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:03.574086",
+            "results": [
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "r 3, 2024, to all shareholders of record on September 12, 2024. On June 7, 2024, NVIDIA completed a ten-for-one forward stock split. All share and per-share amounts presented have been retroactively adjusted to reflect the stock split. Q2 Fiscal 2025 Summary Outlook NVIDIA's outlook for the third quarter of fiscal 2025 is as follows: \u2022 Revenue is expec",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-08-28-0001045810-24-000262.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "ical: Data Center, Gaming, Professional Visualization, and Automotive. On June 7, 2024, we completed a 10-for-1 forward stock split. All share and per share amounts presented have been retroactively adjusted to reflect the stock split. Revenue Revenue was a record $30.0 billion, up 122% from a year ago and up 15% sequentially. Data Center revenue was a",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-08-28-0001045810-24-000262.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-11-07-0001045810-24-000300.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:03.594756",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-11-20-0001045810-24-000315.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:12.357194",
+            "results": [
+                {
+                    "found": true,
+                    "type": "reverse",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "Fiscal 2025 Summary *All per share amounts presented herein have been retroactively adjusted to reflect the ten-for-one stock split, which was effective June 7, 2024. Outlook NVIDIA's outlook for the fourth quarter of fiscal 2025 is as follows: \u2022 Reve",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-11-20-0001045810-24-000315.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "CONDENSED CONSOLIDATED STATEMENTS OF INCOME (In millions, except per share data) (Unaudited) (A) Reflects a ten-for-one stock split on June 7, 2024. EX-99.2 3 q3fy25cfocommentary.htm EX-99.2 Document CFO Commentary on Third Quarter Fiscal 2025 Results",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-11-20-0001045810-24-000315.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "ical: Data Center, Gaming, Professional Visualization, and Automotive. On June 7, 2024, we completed a 10-for-1 forward stock split. All share and per share amounts presented have been retroactively adjusted to reflect the stock split. Revenue Revenue was a record $35.1 billion, up 94% from a year ago and up 17% sequentially. Data Center revenue was a ",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2024-11-20-0001045810-24-000315.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-01-17-0001045810-25-000007.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:12.379992",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-02-26-0001045810-25-000021.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:18.242172",
+            "results": [
+                {
+                    "found": true,
+                    "type": "reverse",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "Fiscal 2025 Summary *All per share amounts presented herein have been retroactively adjusted to reflect the ten-for-one stock split, which was effective June 7, 2024. Outlook NVIDIA's outlook for the first quarter of fiscal 2026 is as follows: \u2022 Reven",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-02-26-0001045810-25-000021.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                },
+                {
+                    "found": true,
+                    "type": "forward",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "ical: Data Center, Gaming, Professional Visualization, and Automotive. On June 7, 2024, we completed a 10-for-1 forward stock split. All share and per share amounts presented have been retroactively adjusted to reflect the stock split. Revenue Revenue for the fourth quarter was a record $39.3 billion, up 78% from a year ago and up 12% sequentially. Fis",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-02-26-0001045810-25-000021.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                }
+            ]
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-03-07-0001045810-25-000039.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:18.267570",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-04-15-0001045810-25-000082.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:18.302688",
+            "results": []
+        },
+        {
+            "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-05-28-0001045810-25-000115.txt.gz",
+            "model": "mistral:latest",
+            "timestamp": "2025-09-28T11:48:24.116522",
+            "results": [
+                {
+                    "found": true,
+                    "type": "reverse",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "l 2026 Summary *All per share amounts presented herein have been retroactively adjusted to reflect NVIDIA's ten-for-one stock split, which was effective June 7, 2024. Outlook NVIDIA's outlook for the second quarter of fiscal 2026 is as follows: \u2022 Reve",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-05-28-0001045810-25-000115.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                },
+                {
+                    "found": true,
+                    "type": "reverse",
+                    "ratio": "10-for-1",
+                    "date": "2024-06-07",
+                    "confidence": 1,
+                    "evidence": "Fiscal 2026 Summary *All per share amounts presented herein have been retroactively adjusted to reflect our ten-for-one stock split, which was effective June 7, 2024. We specialize in markets where our computing platforms can provide tremendous accele",
+                    "filename": "fairvalue\\_stock_split_parser\\data\\8K-2025-05-28-0001045810-25-000115.txt.gz",
+                    "normalized_ratio": "10:1",
+                    "normalized_date": "2024-06-07"
+                }
+            ]
+        }
+    ]
+}

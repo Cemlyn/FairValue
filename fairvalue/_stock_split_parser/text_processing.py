@@ -12,7 +12,7 @@ from typing import List, Tuple, Iterable, Optional
 from ftfy import fix_text
 from bs4 import BeautifulSoup
 
-from constant import DEFAULT_KEYWORDS, RATIO_PATTERNS, DATE_PATTERNS
+from .constant import DEFAULT_KEYWORDS, RATIO_PATTERNS, DATE_PATTERNS
 
 
 def convert_html_to_text(text: str) -> str:
