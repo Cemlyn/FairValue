@@ -21,6 +21,28 @@ A Python library for automated company valuations using Discounted Cash Flow (DC
 
 ## Quick Start
 
+### Fetching SEC EDGAR Data by Ticker
+
+```python
+from fairvalue import Stock
+from fairvalue.models import SECFilings
+
+# The SEC requires a User-Agent with your name and email. Alternatively set
+# the SEC_USER_AGENT environment variable.
+secfiling = SECFilings.from_ticker(
+    "AAPL",
+    user_agent="Jane Doe jane@example.com",
+    cache_dir="./data",  # optional: saves responses so repeat runs don't re-query the SEC
+)
+
+stock = Stock(sec_filing=secfiling)
+valuation = stock.predict_fairvalue(growth_rate=0.02, number_of_years=10, discounting_rate=0.04)
+```
+
+Requests are throttled to 5 per second, below the SEC's 10 per second limit. If the SEC
+refuses a request (HTTP 403/429), the client raises an error rather than retrying, since
+retrying while blocked extends the block.
+
 ### Using SEC EDGAR Data
 
 ```python
