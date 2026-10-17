@@ -114,6 +114,19 @@ def test_cache_dir_reuses_responses(fake_sec, tmp_path):
     assert os.path.exists(tmp_path / "companyfacts" / "CIK0000320193.json")
 
 
+def test_relative_cache_dir_is_fixed_at_creation(fake_sec, tmp_path, monkeypatch):
+    responses, requests = fake_sec
+    responses[sec_client.COMPANYFACTS_URL.format(cik="0000320193")] = {"cik": 320193}
+
+    monkeypatch.chdir(tmp_path)
+    client = SECClient(user_agent=USER_AGENT, cache_dir="cache")
+    os.mkdir(tmp_path / "elsewhere")
+    monkeypatch.chdir(tmp_path / "elsewhere")
+
+    client.get_companyfacts(320193)
+    assert os.path.exists(tmp_path / "cache" / "companyfacts" / "CIK0000320193.json")
+
+
 @pytest.mark.parametrize("company", ["AAPL"])
 def test_secfilings_from_ticker(fake_sec, sec_data):
     responses, _ = fake_sec

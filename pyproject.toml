@@ -35,7 +35,10 @@ dev = [
 ]
 
 [tool.setuptools.packages]
-find = { include = ["fairvalue"], exclude = ["data","scripts"] }
+find = { include = ["fairvalue*"], exclude = ["data","scripts"] }
+
+[tool.setuptools.package-data]
+fairvalue = ["data/*.json"]
 
 
 # Configuration for pytest

@@ -60,7 +60,8 @@ class SECClient:
                 to the SEC_USER_AGENT environment variable.
             cache_dir (str, optional): If provided, responses are saved here and re-used
                 on later calls, using the same 'companyfacts' and 'submissions' layout
-                as the SEC bulk downloads.
+                as the SEC bulk downloads. A relative path is resolved against the
+                current working directory when the client is created, and '~' is expanded.
             timeout (float): Request timeout in seconds.
         """
         user_agent = user_agent or os.environ.get(USER_AGENT_ENV_VAR)
@@ -71,7 +72,10 @@ class SECClient:
             )
 
         self.user_agent = user_agent
-        self.cache_dir = cache_dir
+        # resolved once so a later os.chdir doesn't move the cache
+        self.cache_dir = (
+            os.path.abspath(os.path.expanduser(cache_dir)) if cache_dir else None
+        )
         self.timeout = timeout
         self._ticker_map: Optional[Dict[str, str]] = None
 

@@ -13,4 +13,6 @@ CAPITAL_EXPENDITURE = "capital_expenditure"
 SHARES_OUTSTANDING = "shares_outstanding"
 FREE_CASHFLOW = "free_cashflows"
 
-STATE_OF_INCORP_DICT = os.path.join("data", "states_of_incorp.json")
+# bundled with the package so it resolves regardless of the working directory
+PACKAGE_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+STATE_OF_INCORP_DICT = os.path.join(PACKAGE_DATA_DIR, "states_of_incorp.json")
