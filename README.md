@@ -1,6 +1,7 @@
 # FairValue
 
 ![Test Status](https://github.com/Cemlyn/FairValue/actions/workflows/test.yml/badge.svg)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Cemlyn_FairValue&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Cemlyn_FairValue)
 
@@ -20,6 +21,32 @@ A Python library for automated company valuations using Discounted Cash Flow (DC
 - Currency-aware calculations (tbd - currently USD only)
 
 ## Quick Start
+
+### Fetching SEC EDGAR Data by Ticker
+
+```python
+from fairvalue import Stock
+from fairvalue.models import SECFilings
+
+# The SEC requires a User-Agent with your name and email. Alternatively set
+# the SEC_USER_AGENT environment variable.
+secfiling = SECFilings.from_ticker(
+    "AAPL",
+    user_agent="Jane Doe jane@example.com",
+    cache_dir="~/.cache/fairvalue",  # optional: saves responses so repeat runs don't re-query the SEC
+)
+
+stock = Stock(sec_filing=secfiling)
+valuation = stock.predict_fairvalue(growth_rate=0.02, number_of_years=10, discounting_rate=0.04)
+```
+
+Requests are throttled to 5 per second, below the SEC's 10 per second limit. If the SEC
+refuses a request (HTTP 403/429), the client raises an error rather than retrying, since
+retrying while blocked extends the block.
+
+Without `cache_dir` nothing is cached and every call queries the SEC. A relative `cache_dir` is
+resolved against the current working directory, not the package's install location. Cached
+files are never refreshed, so delete them to pick up new filings.
 
 ### Using SEC EDGAR Data
 

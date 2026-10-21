@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 from fairvalue.models.financials import TickerFinancials
 from fairvalue._exceptions import ParseException
 from fairvalue.models.utils import validate_date
+from fairvalue.sec_client import SECClient
 from fairvalue.constants import (
     STATE_OF_INCORP_DICT,
     DATE_FORMAT,
@@ -345,6 +346,34 @@ class SECFilings:
         )
 
         self.date_of_latest_filing = self._extract_latest_filing_date(submissions)
+
+    @classmethod
+    def from_ticker(
+        cls,
+        ticker: str,
+        user_agent: Optional[str] = None,
+        cache_dir: Optional[str] = None,
+        client: Optional[SECClient] = None,
+    ) -> "SECFilings":
+        """
+        Retrieve a company's filings data from the SEC EDGAR APIs by ticker.
+
+        Args:
+            ticker (str): Ticker symbol, e.g. 'AAPL'.
+            user_agent (str, optional): Name and contact email sent to the SEC, required
+                by their fair access policy. Defaults to the SEC_USER_AGENT env variable.
+            cache_dir (str, optional): Directory to save responses to and re-use them from.
+            client (SECClient, optional): Existing client, e.g. when fetching many tickers.
+        """
+        if client is None:
+            client = SECClient(user_agent=user_agent, cache_dir=cache_dir)
+
+        cik = client.lookup_cik(ticker)
+
+        return cls(
+            companyfacts=CompanyFacts(**client.get_companyfacts(cik)),
+            submissions=Submissions(**client.get_submissions(cik)),
+        )
 
     def _extract_latest_filing_date(self, submissions: Submissions) -> Optional[str]:
         """

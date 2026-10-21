@@ -204,8 +204,9 @@ class Stock:
 
             free_cashflows = []
 
+            # project undiscounted cashflows, discounting is applied in calc_intrinsic_value
             for _ in range(number_of_years):
-                fcf = fcf * (1 + g) / (1 + discounting_rate)
+                fcf = fcf * (1 + g)
                 free_cashflows.append(fcf)
 
             free_cashflows = Floats(data=free_cashflows)
@@ -255,8 +256,7 @@ def calc_intrinsic_value(
     the Discounted Cash Flow (DCF) method.
 
     Args:
-        free_cashflows (list): List of free cash flows for the forecast period.
-        growth (list): Annual growth rates for free cash flows (in decimal, e.g., 0.05 for 5%).
+        free_cashflows (list): List of undiscounted free cash flows for the forecast period.
         discount (list): Annual discount rates (in decimal, e.g., 0.1 for 10%).
         terminal_growth (float): Terminal growth rate (in decimal, e.g., 0.03 for 3%).
 

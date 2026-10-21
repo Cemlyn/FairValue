@@ -97,3 +97,37 @@ def test_stock_predict_fairvalue_type_hints():
     ), "forecast_date should be str or None"
     assert hints["use_historic_shares"] == bool, "use_historic_shares should be bool"
     assert hints["return"] == Dict[str, Any], "Return type should be dict"
+
+
+# =============================================================================
+# Test valuation
+# =============================================================================
+
+
+@pytest.mark.parametrize("number_of_years", [1, 2, 10])
+def test_predict_fairvalue_flat_perpetuity(number_of_years):
+    """
+    A flat cashflow of 100 discounted at 10% with no growth is a perpetuity worth
+    100 / 0.1 = 1000, regardless of the forecast horizon. Guards against cashflows
+    being discounted more than once.
+    """
+    stock = Stock(
+        ticker_id="TEST",
+        latest_shares_outstanding=10,
+        historical_financials={
+            "year_end_dates": ["2020-12-31"],
+            "free_cashflows": [100.0],
+            "shares_outstanding": [10],
+        },
+    )
+
+    result = stock.predict_fairvalue(
+        growth_rate=0.0,
+        terminal_growth_rate=0.0,
+        discounting_rate=0.1,
+        number_of_years=number_of_years,
+        forecast_date="2021-06-01",
+    )
+
+    assert result["company_value"] == pytest.approx(1000.0)
+    assert result["intrinsic_value"] == pytest.approx(100.0)
